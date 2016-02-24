@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -69,7 +70,14 @@ func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 	g()
 	fmt.Fprintf(out, ",\n%s)\n", p)
 
-	for ref, c := range v.refs {
+	refs := make([]string, 0, len(v.refs))
+	for ref := range v.refs {
+		refs = append(refs, ref)
+	}
+	sort.Strings(refs)
+
+	for _, ref := range refs {
+		c := v.refs[ref]
 		fmt.Fprintf(out, "\n%s%s.SetReference(\n%s\t`%s`,\n", p, vname, p, ref)
 		g1 := ctx.Indent()
 		if ref == "#" {
@@ -292,7 +300,15 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 		g()
 	}
 
-	for pname, pdef := range c.properties {
+	pnames := make([]string, 0, len(c.properties))
+	for pname := range c.properties {
+		pnames = append(pnames, pname)
+	}
+	sort.Strings(pnames)
+
+	for _, pname := range pnames {
+		pdef := c.properties[pname]
+
 		g := ctx.Indent()
 		fmt.Fprintf(out, ".\n%sAddProp(\n%s\t`%s`,\n", p, p, pname)
 		if err := generateCode(ctx, out, pdef); err != nil {

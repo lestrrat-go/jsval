@@ -10,171 +10,27 @@ func JSValFoo() *jsval.JSVal {
 				jsval.NilConstraint,
 			).
 			AddProp(
-				`default`,
-				jsval.Object().
-					AdditionalProperties(
-						jsval.NilConstraint,
-					),
-			).
-			AddProp(
-				`pattern`,
-				jsval.String(),
-			).
-			AddProp(
-				`title`,
-				jsval.String(),
-			).
-			AddProp(
-				`enum`,
-				jsval.Array().MinItems(1).MaxItems(0).UniqueItems(),
-			).
-			AddProp(
-				`multipleOf`,
-				jsval.Number().Minimum(0.000000).ExclusiveMinimum(true),
-			).
-			AddProp(
-				`minItems`,
-				jsval.Reference(V).RefersTo(`#/definitions/positiveIntegerDefault0`),
-			).
-			AddProp(
-				`oneOf`,
-				jsval.Reference(V).RefersTo(`#/definitions/schemaArray`),
-			).
-			AddProp(
-				`not`,
-				jsval.Reference(V).RefersTo(`#`),
-			).
-			AddProp(
 				`$schema`,
-				jsval.String(),
-			).
-			AddProp(
-				`minimum`,
-				jsval.Number(),
+				jsval.String().Format("uri"),
 			).
 			AddProp(
 				`additionalItems`,
-				jsval.All().
+				jsval.Any().
 					Add(
-						jsval.Any().
-							Add(
-								jsval.Boolean(),
-							).
-							Add(
-								jsval.Reference(V).RefersTo(`#`),
-							),
+						jsval.Boolean(),
 					).
 					Add(
-						jsval.Object().
-							AdditionalProperties(
-								jsval.NilConstraint,
-							),
-					),
-			).
-			AddProp(
-				`uniqueItems`,
-				jsval.Boolean(),
-			).
-			AddProp(
-				`minProperties`,
-				jsval.Reference(V).RefersTo(`#/definitions/positiveIntegerDefault0`),
-			).
-			AddProp(
-				`patternProperties`,
-				jsval.Object().
-					AdditionalProperties(
 						jsval.Reference(V).RefersTo(`#`),
 					),
 			).
 			AddProp(
-				`maxLength`,
-				jsval.Reference(V).RefersTo(`#/definitions/positiveInteger`),
-			).
-			AddProp(
-				`required`,
-				jsval.Reference(V).RefersTo(`#/definitions/stringArray`),
-			).
-			AddProp(
-				`anyOf`,
-				jsval.Reference(V).RefersTo(`#/definitions/schemaArray`),
-			).
-			AddProp(
-				`dependencies`,
-				jsval.Object().
-					AdditionalProperties(
-						jsval.All().
-							Add(
-								jsval.Any().
-									Add(
-										jsval.Reference(V).RefersTo(`#`),
-									).
-									Add(
-										jsval.Reference(V).RefersTo(`#/definitions/stringArray`),
-									),
-							).
-							Add(
-								jsval.Object().
-									AdditionalProperties(
-										jsval.NilConstraint,
-									),
-							),
-					),
-			).
-			AddProp(
-				`maxItems`,
-				jsval.Reference(V).RefersTo(`#/definitions/positiveInteger`),
-			).
-			AddProp(
-				`type`,
-				jsval.All().
+				`additionalProperties`,
+				jsval.Any().
 					Add(
-						jsval.Any().
-							Add(
-								jsval.Reference(V).RefersTo(`#/definitions/simpleTypes`),
-							).
-							Add(
-								jsval.Array().MinItems(1).MaxItems(0).UniqueItems(),
-							),
+						jsval.Boolean(),
 					).
 					Add(
-						jsval.Object().
-							AdditionalProperties(
-								jsval.NilConstraint,
-							),
-					),
-			).
-			AddProp(
-				`properties`,
-				jsval.Object().
-					AdditionalProperties(
 						jsval.Reference(V).RefersTo(`#`),
-					),
-			).
-			AddProp(
-				`exclusiveMaximum`,
-				jsval.Boolean(),
-			).
-			AddProp(
-				`description`,
-				jsval.String(),
-			).
-			AddProp(
-				`items`,
-				jsval.All().
-					Add(
-						jsval.Any().
-							Add(
-								jsval.Reference(V).RefersTo(`#`),
-							).
-							Add(
-								jsval.Reference(V).RefersTo(`#/definitions/schemaArray`),
-							),
-					).
-					Add(
-						jsval.Object().
-							AdditionalProperties(
-								jsval.NilConstraint,
-							),
 					),
 			).
 			AddProp(
@@ -182,8 +38,70 @@ func JSValFoo() *jsval.JSVal {
 				jsval.Reference(V).RefersTo(`#/definitions/schemaArray`),
 			).
 			AddProp(
+				`anyOf`,
+				jsval.Reference(V).RefersTo(`#/definitions/schemaArray`),
+			).
+			AddProp(
+				`default`,
+				jsval.NilConstraint,
+			).
+			AddProp(
+				`definitions`,
+				jsval.Object().
+					AdditionalProperties(
+						jsval.Reference(V).RefersTo(`#`),
+					),
+			).
+			AddProp(
+				`dependencies`,
+				jsval.Object().
+					AdditionalProperties(
+						jsval.Any().
+							Add(
+								jsval.Reference(V).RefersTo(`#`),
+							).
+							Add(
+								jsval.Reference(V).RefersTo(`#/definitions/stringArray`),
+							),
+					),
+			).
+			AddProp(
+				`description`,
+				jsval.String(),
+			).
+			AddProp(
+				`enum`,
+				jsval.Array().MinItems(1).MaxItems(0).UniqueItems(),
+			).
+			AddProp(
+				`exclusiveMaximum`,
+				jsval.Boolean(),
+			).
+			AddProp(
 				`exclusiveMinimum`,
 				jsval.Boolean(),
+			).
+			AddProp(
+				`id`,
+				jsval.String().Format("uri"),
+			).
+			AddProp(
+				`items`,
+				jsval.Any().
+					Add(
+						jsval.Reference(V).RefersTo(`#`),
+					).
+					Add(
+						jsval.Reference(V).RefersTo(`#/definitions/schemaArray`),
+					),
+			).
+			AddProp(
+				`maxItems`,
+				jsval.Reference(V).RefersTo(`#/definitions/positiveInteger`),
+			).
+			AddProp(
+				`maxLength`,
+				jsval.Reference(V).RefersTo(`#/definitions/positiveInteger`),
 			).
 			AddProp(
 				`maxProperties`,
@@ -194,38 +112,72 @@ func JSValFoo() *jsval.JSVal {
 				jsval.Number(),
 			).
 			AddProp(
+				`minItems`,
+				jsval.Reference(V).RefersTo(`#/definitions/positiveIntegerDefault0`),
+			).
+			AddProp(
 				`minLength`,
 				jsval.Reference(V).RefersTo(`#/definitions/positiveIntegerDefault0`),
 			).
 			AddProp(
-				`additionalProperties`,
-				jsval.All().
-					Add(
-						jsval.Any().
-							Add(
-								jsval.Boolean(),
-							).
-							Add(
-								jsval.Reference(V).RefersTo(`#`),
-							),
-					).
-					Add(
-						jsval.Object().
-							AdditionalProperties(
-								jsval.NilConstraint,
-							),
-					),
+				`minProperties`,
+				jsval.Reference(V).RefersTo(`#/definitions/positiveIntegerDefault0`),
 			).
 			AddProp(
-				`definitions`,
+				`minimum`,
+				jsval.Number(),
+			).
+			AddProp(
+				`multipleOf`,
+				jsval.Number().Minimum(0.000000).ExclusiveMinimum(true),
+			).
+			AddProp(
+				`not`,
+				jsval.Reference(V).RefersTo(`#`),
+			).
+			AddProp(
+				`oneOf`,
+				jsval.Reference(V).RefersTo(`#/definitions/schemaArray`),
+			).
+			AddProp(
+				`pattern`,
+				jsval.String().Format("regex"),
+			).
+			AddProp(
+				`patternProperties`,
 				jsval.Object().
 					AdditionalProperties(
 						jsval.Reference(V).RefersTo(`#`),
 					),
 			).
 			AddProp(
-				`id`,
+				`properties`,
+				jsval.Object().
+					AdditionalProperties(
+						jsval.Reference(V).RefersTo(`#`),
+					),
+			).
+			AddProp(
+				`required`,
+				jsval.Reference(V).RefersTo(`#/definitions/stringArray`),
+			).
+			AddProp(
+				`title`,
 				jsval.String(),
+			).
+			AddProp(
+				`type`,
+				jsval.Any().
+					Add(
+						jsval.Reference(V).RefersTo(`#/definitions/simpleTypes`),
+					).
+					Add(
+						jsval.Array().MinItems(1).MaxItems(0).UniqueItems(),
+					),
+			).
+			AddProp(
+				`uniqueItems`,
+				jsval.Boolean(),
 			),
 	)
 
@@ -234,38 +186,26 @@ func JSValFoo() *jsval.JSVal {
 		V.Root(),
 	)
 	V.SetReference(
-		`#/definitions/schemaArray`,
-		jsval.Array().MinItems(1).MaxItems(0),
-	)
-	V.SetReference(
 		`#/definitions/positiveInteger`,
 		jsval.Integer().Minimum(0),
-	)
-	V.SetReference(
-		`#/definitions/simpleTypes`,
-		jsval.String().Enum([]interface{}{"array", "boolean", "integer", "null", "number", "object", "string"}),
 	)
 	V.SetReference(
 		`#/definitions/positiveIntegerDefault0`,
 		jsval.All().
 			Add(
-				jsval.All().
-					Add(
-						jsval.Reference(V).RefersTo(`#/definitions/positiveInteger`),
-					).
-					Add(
-						jsval.Object().
-							AdditionalProperties(
-								jsval.NilConstraint,
-							),
-					),
+				jsval.Reference(V).RefersTo(`#/definitions/positiveInteger`),
 			).
 			Add(
-				jsval.Object().
-					AdditionalProperties(
-						jsval.NilConstraint,
-					),
+				jsval.NilConstraint,
 			),
+	)
+	V.SetReference(
+		`#/definitions/schemaArray`,
+		jsval.Array().MinItems(1).MaxItems(0),
+	)
+	V.SetReference(
+		`#/definitions/simpleTypes`,
+		jsval.String().Enum([]interface{}{"array", "boolean", "integer", "null", "number", "object", "string"}),
 	)
 	V.SetReference(
 		`#/definitions/stringArray`,
