@@ -8,7 +8,20 @@ Validator toolset, aimed to be used with JSON Schema
 
 # Description
 
-The `go-jsval` package is a 
+The `go-jsval` package is a data validation toolset, with
+a tool to generate validators in Go from JSON schemas.
+
+# Install
+
+```
+go get -u github.com/lestrrat/go-jsval
+```
+
+If you want to install the `jsval` tool, do
+
+```
+go get -u github.com/lestrrat/go-jsval/cmd/jsval
+```
 
 # Features
 
