@@ -38,6 +38,14 @@ jsval -schema schema.json -name Foo -o foo_jsval.go
 See the file `generated_validator_test.go` for a sample
 generated from JSON Schema schema.
 
+If your document isn't a real JSON schema, but contains a
+JSON schema (like JSON Hyper Schema), you can use the `-ptr`
+argument to access a specific portion of a JSON document:
+
+```
+jsval -schema hyper.json -name Foo -ptr "#/links/0"
+```
+
 ## Can handle JSON References in JSON Schema definitions
 
 Note: Not very well tested. Test cases welcome

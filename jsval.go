@@ -32,6 +32,21 @@ func (v *JSVal) Build(s *schema.Schema) (err error) {
 		}()
 	}
 
+	return v.BuildWithCtx(s, nil)
+}
+
+func (v *JSVal) BuildWithCtx(s *schema.Schema, jsctx interface{}) (err error) {
+	if pdebug.Enabled {
+		g := pdebug.IPrintf("START JSVal.BuildWithCtx")
+		defer func() {
+			if err == nil {
+				g.IRelease("END JSVal.BuildWithCtx (OK)")
+			} else {
+				g.IRelease("END JSVal.BuildWithCtx (FAIL): %s", err)
+			}
+		}()
+	}
+
 	ctx := buildctx{
 		V: v,
 		S: s,
@@ -47,6 +62,10 @@ func (v *JSVal) Build(s *schema.Schema) (err error) {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking references now")
 		}
+		if jsctx == nil {
+			jsctx = s
+		}
+
 		r := jsref.New()
 		for ref := range ctx.R {
 			if pdebug.Enabled {
@@ -61,14 +80,20 @@ func (v *JSVal) Build(s *schema.Schema) (err error) {
 				continue
 			}
 
-			thing, err := r.Resolve(s, ref)
+			thing, err := r.Resolve(jsctx, ref)
 			if err != nil {
 				return err
 			}
 
-			s1, ok := thing.(*schema.Schema)
-			if !ok {
-				return errors.New("resolved result is not a schema")
+			var s1 *schema.Schema
+			switch thing.(type) {
+			case *schema.Schema:
+				s1 = thing.(*schema.Schema)
+			case map[string]interface{}:
+				s1 = schema.New()
+				if err := s1.Extract(thing.(map[string]interface{})); err != nil {
+					return err
+				}
 			}
 
 			c1, err := buildFromSchema(&ctx, s1)
