@@ -5,11 +5,16 @@ import (
 	"reflect"
 
 	"github.com/lestrrat/go-jsschema"
+	"github.com/lestrrat/go-pdebug"
 )
 
-func (c *ObjectConstraint) FromSchema(s *schema.Schema) error {
+func (c *ObjectConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
+	if pdebug.Enabled {
+		g := pdebug.IPrintf("START ObjectConstraint.FromSchema")
+		defer g.IRelease("END ObjectConstraint.FromSchema")
+	}
 	for pname, pdef := range s.Properties {
-		cprop, err := FromSchema(pdef)
+		cprop, err := buildFromSchema(ctx, pdef)
 		if err != nil {
 			return err
 		}
@@ -20,15 +25,15 @@ func (c *ObjectConstraint) FromSchema(s *schema.Schema) error {
 		c.AddProp(pname, cprop)
 	}
 
-	if aitems := s.AdditionalItems; aitems != nil {
-		if sc := aitems.Schema; sc != nil {
-			aitem, err := FromSchema(sc)
+	if aprops := s.AdditionalProperties; aprops != nil {
+		if sc := aprops.Schema; sc != nil {
+			aitem, err := buildFromSchema(ctx, sc)
 			if err != nil {
 				return err
 			}
-			c.AdditionalItems(aitem)
+			c.AdditionalProperties(aitem)
 		} else {
-			c.AdditionalItems(NilConstraint)
+			c.AdditionalProperties(NilConstraint)
 		}
 	}
 	return nil
@@ -36,13 +41,13 @@ func (c *ObjectConstraint) FromSchema(s *schema.Schema) error {
 
 func Object() *ObjectConstraint {
 	return &ObjectConstraint{
-		properties:      map[string]Constraint{},
-		additionalItems: nil,
+		properties:           map[string]Constraint{},
+		additionalProperties: nil,
 	}
 }
 
-func (o *ObjectConstraint) AdditionalItems(c Constraint) *ObjectConstraint {
-	o.additionalItems = c
+func (o *ObjectConstraint) AdditionalProperties(c Constraint) *ObjectConstraint {
+	o.additionalProperties = c
 	return o
 }
 
@@ -54,7 +59,18 @@ func (o *ObjectConstraint) AddProp(name string, c Constraint) *ObjectConstraint 
 	return o
 }
 
-func (o *ObjectConstraint) Validate(v interface{}) error {
+func (o *ObjectConstraint) Validate(v interface{}) (err error) {
+	if pdebug.Enabled {
+		g := pdebug.IPrintf("START ObjectConstraint.Validate")
+		defer func() {
+			if err == nil {
+				g.IRelease("END ObjectConstraint.Validate (PASS)")
+			} else {
+				g.IRelease("END ObjectConstraint.Validate (FAIL): %s", err)
+			}
+		}()
+	}
+
 	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
 	case reflect.Ptr, reflect.Interface:
@@ -64,8 +80,14 @@ func (o *ObjectConstraint) Validate(v interface{}) error {
 	var fields []string
 	switch rv.Kind() {
 	case reflect.Struct:
+		if pdebug.Enabled {
+			pdebug.Printf("Validation target is a struct")
+		}
 		fields = o.FieldNamesFromStruct(rv)
 	case reflect.Map:
+		if pdebug.Enabled {
+			pdebug.Printf("Validation target is a map")
+		}
 		if rv.Type().Key().Kind() != reflect.String {
 			return errors.New("only maps with string keys can be handled")
 		}
@@ -92,8 +114,14 @@ func (o *ObjectConstraint) Validate(v interface{}) error {
 	o.lock.Unlock()
 
 	for pname, c := range propdefs {
+		if pdebug.Enabled {
+			pdebug.Printf("Validating property '%s'", pname)
+		}
 		pval := rv.MapIndex(reflect.ValueOf(pname))
 		if pval == zeroval {
+			if pdebug.Enabled {
+				pdebug.Printf("Property '%s' does not exist", pname)
+			}
 			if c.IsRequired() { // required, and not present.
 				return errors.New("object property '" + pname + "' is required")
 			}
@@ -115,7 +143,7 @@ func (o *ObjectConstraint) Validate(v interface{}) error {
 	}
 
 	if len(props) > 0 {
-		c := o.additionalItems
+		c := o.additionalProperties
 		if c == nil {
 			return errors.New("additional items are not allowed")
 		}

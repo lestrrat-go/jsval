@@ -5,15 +5,27 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/lestrrat/go-jsref"
 	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-structinfo"
 )
 
 var zeroval = reflect.Value{}
 
+type Validator interface {
+	Validate(interface{}) error
+}
+
+type JSVal struct {
+	root    Constraint
+	reflock sync.Mutex
+	refs    map[string]Constraint
+	resolver *jsref.Resolver
+}
+
 type Constraint interface {
+	buildFromSchema(*buildctx, *schema.Schema) error
 	DefaultValue() interface{}
-	FromSchema(s *schema.Schema) error
 	HasDefault() bool
 	IsRequired() bool
 	Required(bool)
@@ -38,20 +50,22 @@ type BooleanConstraint struct {
 type StringConstraint struct {
 	defaultValue
 	required
+	enums     *EnumConstraint
 	maxLength int
 	minLength int
 	regexp    *regexp.Regexp
-	enum      []interface{}
 }
 
 type NumberConstraint struct {
 	defaultValue
 	required
-	applyMinimum bool
-	applyMaximum bool
-	minimum      float64
-	maximum      float64
-	enum         []interface{}
+	applyMinimum     bool
+	applyMaximum     bool
+	minimum          float64
+	maximum          float64
+	exclusiveMinimum bool
+	exclusiveMaximum bool
+	enums            *EnumConstraint
 }
 
 type IntegerConstraint struct {
@@ -64,6 +78,9 @@ type ArrayConstraint struct {
 	itemspec        Constraint
 	positionalItems []Constraint
 	additionalItems Constraint
+	minItems        int
+	maxItems        int
+	uniqueItems     bool
 }
 
 var DefaultFieldNamesFromStruct = structinfo.JSONFieldsFromStruct
@@ -73,11 +90,29 @@ type ObjectConstraint struct {
 	required
 	lock                 sync.Mutex
 	properties           map[string]Constraint
-	additionalItems      Constraint
+	additionalProperties Constraint
 	FieldNamesFromStruct func(reflect.Value) []string
 }
 
-type AnyConstraint struct {
+type EnumConstraint struct {
+	nilConstraint
+	enums []interface{}
+}
+
+type CombinedConstraint interface {
+	Constraint
+	Constraints() []Constraint
+}
+
+type comboconstraint struct {
 	nilConstraint
 	constraints []Constraint
+}
+
+type AnyConstraint struct {
+	comboconstraint
+}
+
+type AllConstraint struct {
+	comboconstraint
 }

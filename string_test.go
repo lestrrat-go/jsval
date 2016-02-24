@@ -21,14 +21,14 @@ func TestStringFromSchema(t *testing.T) {
 		return
 	}
 
-	c := String()
-	if !assert.NoError(t, c.FromSchema(s), "String.FromSchema should succeed") {
+	v := New()
+	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
 		return
 	}
 
 	c2 := String()
 	c2.Default("Hello, World!").MaxLength(15).MinLength(5)
-	if !assert.Equal(t, c2, c, "constraints are equal") {
+	if !assert.Equal(t, c2, v.root, "constraints are equal") {
 		return
 	}
 }

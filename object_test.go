@@ -11,7 +11,7 @@ import (
 func TestObject(t *testing.T) {
 	const src = `{
   "type": "object",
-  "additionalItems": false,
+  "additionalProperties": false,
   "properties": {
     "name": {
       "type": "string",
@@ -36,8 +36,8 @@ func TestObject(t *testing.T) {
 		return
 	}
 
-	c := Object()
-	if !assert.NoError(t, c.FromSchema(s), "Object.FromSchema should succeed") {
+	v := New()
+	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
 		return
 	}
 
@@ -51,7 +51,7 @@ func TestObject(t *testing.T) {
 	}
 	for _, input := range data {
 		t.Logf("Testing %#v (should FAIL)", input)
-		if !assert.Error(t, c.Validate(input), "validation fails") {
+		if !assert.Error(t, v.Validate(input), "validation fails") {
 			return
 		}
 	}
@@ -62,7 +62,7 @@ func TestObject(t *testing.T) {
 	}
 	for _, input := range data {
 		t.Logf("Testing %#v (should PASS)", input)
-		if !assert.NoError(t, c.Validate(input), "validation passes") {
+		if !assert.NoError(t, v.Validate(input), "validation passes") {
 			return
 		}
 	}

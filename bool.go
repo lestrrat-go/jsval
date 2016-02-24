@@ -7,7 +7,7 @@ import (
 	"github.com/lestrrat/go-jsschema"
 )
 
-func (c *BooleanConstraint) FromSchema(s *schema.Schema) error {
+func (c *BooleanConstraint) buildFromSchema(_ *buildctx, _ *schema.Schema) error {
 	return nil
 }
 

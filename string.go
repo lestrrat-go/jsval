@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"github.com/lestrrat/go-jsschema"
+	"github.com/lestrrat/go-pdebug"
 )
 
 func (sc *StringConstraint) Default(v interface{}) *StringConstraint {
@@ -14,7 +15,7 @@ func (sc *StringConstraint) Default(v interface{}) *StringConstraint {
 	return sc
 }
 
-func (c *StringConstraint) FromSchema(s *schema.Schema) error {
+func (c *StringConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
 	if !s.Type.Contains(schema.StringType) {
 		return errors.New("schema is not for string")
 	}
@@ -48,7 +49,17 @@ func (c *StringConstraint) FromSchema(s *schema.Schema) error {
 //
 // The caller is the only person who can determine if a string
 // value is "unavailable"
-func (s *StringConstraint) Validate(v interface{}) error {
+func (s *StringConstraint) Validate(v interface{}) (err error) {
+	if pdebug.Enabled {
+		g := pdebug.IPrintf("START StringConstraint.Validate")
+		defer func() {
+			if err == nil {
+				g.IRelease("END StringConstraint.Validate (PASS)")
+			} else {
+				g.IRelease("END StringConstraint.Validate (FAIL): %s", err)
+			}
+		}()
+	}
 	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
 	case reflect.Ptr, reflect.Interface:
@@ -63,23 +74,36 @@ func (s *StringConstraint) Validate(v interface{}) error {
 
 	str := rv.String()
 	ls := len(str)
-	if s.maxLength > 0 && ls > s.maxLength {
-		return errors.New("string longer than maxLength")
+	if s.maxLength > 0 {
+		if pdebug.Enabled {
+			pdebug.Printf("Checking MaxLength (%d)", s.maxLength)
+		}
+		if ls > s.maxLength {
+			return errors.New("string longer than maxLength")
+		}
 	}
 
-	if s.minLength > -1 && ls < s.minLength {
-		return errors.New("string shorter than minLength")
+	if s.minLength > -1 {
+		if pdebug.Enabled {
+			pdebug.Printf("Checking MinLength (%d)", s.minLength)
+		}
+		if ls < s.minLength {
+			return errors.New("string shorter than minLength")
+		}
 	}
 
 	if rx := s.regexp; rx != nil {
+		if pdebug.Enabled {
+			pdebug.Printf("Checking Regexp")
+		}
 		if !rx.MatchString(str) {
 			return errors.New("string does not match regular expression")
 		}
 	}
 
-	if enum := s.enum; enum != nil {
-		if !matchenum(str, enum) {
-			return errors.New("value not in enumeration")
+	if enum := s.enums; enum != nil {
+		if err := enum.Validate(str); err != nil {
+			return err
 		}
 	}
 
@@ -87,7 +111,10 @@ func (s *StringConstraint) Validate(v interface{}) error {
 }
 
 func (sc *StringConstraint) Enum(l []interface{}) *StringConstraint {
-	sc.enum = l
+	if sc.enums == nil {
+		sc.enums = Enum()
+	}
+	sc.enums.Enum(l)
 	return sc
 }
 

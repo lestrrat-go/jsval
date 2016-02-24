@@ -14,7 +14,7 @@ func (nc nilConstraint) Validate(_ interface{}) error {
 	return nil
 }
 
-func (nc nilConstraint) FromSchema(_ *schema.Schema) error {
+func (nc nilConstraint) buildFromSchema(_ *buildctx, _ *schema.Schema) error {
 	return nil
 }
 
