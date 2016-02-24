@@ -249,6 +249,10 @@ func generateStringCode(ctx *genctx, out io.Writer, c *StringConstraint) error {
 		fmt.Fprintf(out, ".MinLength(%d)", c.minLength)
 	}
 
+	if f := c.format; f != "" {
+		fmt.Fprintf(out, ".Format(%s)", strconv.Quote(string(f)))
+	}
+
 	if rx := c.regexp; rx != nil {
 		fmt.Fprintf(out, ".Regexp(`%s`)", rx.String())
 	}

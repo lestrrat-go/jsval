@@ -2,8 +2,12 @@ package jsval
 
 import (
 	"errors"
+	"net"
+	"net/mail"
+	"net/url"
 	"reflect"
 	"regexp"
+	"time"
 
 	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-pdebug"
@@ -30,6 +34,10 @@ func (c *StringConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) erro
 
 	if pat := s.Pattern; pat != nil {
 		c.Regexp(pat)
+	}
+
+	if f := s.Format; f != "" {
+		c.Format(f)
 	}
 
 	if lst := s.Enum; len(lst) > 0 {
@@ -92,6 +100,49 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 		}
 	}
 
+	switch s.format {
+	case schema.FormatDateTime:
+		if _, err = time.Parse(time.RFC3339, str); err != nil {
+			return errors.New("invalid datetime")
+		}
+	case schema.FormatEmail:
+		if _, err = mail.ParseAddress(str); err != nil {
+			return errors.New("invalid email address: " + err.Error())
+		}
+	case schema.FormatHostname:
+		if !isDomainName(str) {
+			return errors.New("invalid hostname")
+		}
+	case schema.FormatIPv4:
+		// Should only contain numbers and "."
+		for _, r := range str {
+			switch {
+			case r == 0x2E || 0x30 <= r && r <= 0x39:
+			default:
+				return errors.New("invalid IPv4 address")
+			}
+		}
+		if addr := net.ParseIP(str); addr == nil {
+			return errors.New("invalid IPv4 address")
+		}
+	case schema.FormatIPv6:
+		// Should only contain numbers and ":"
+		for _, r := range str {
+			switch {
+			case r == 0x3A || 0x30 <= r && r <= 0x39:
+			default:
+				return errors.New("invalid IPv6 address")
+			}
+		}
+		if addr := net.ParseIP(str); addr == nil {
+			return errors.New("invalid IPv6 address")
+		}
+	case schema.FormatURI:
+		if _, err = url.Parse(str); err != nil {
+			return errors.New("invalid URI")
+		}
+	}
+
 	if rx := s.regexp; rx != nil {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking Regexp")
@@ -108,6 +159,55 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 	}
 
 	return nil
+}
+
+// stolen from src/net/dnsclient.go
+func isDomainName(s string) bool {
+	// See RFC 1035, RFC 3696.
+	if len(s) == 0 {
+		return false
+	}
+	if len(s) > 255 {
+		return false
+	}
+
+	last := byte('.')
+	ok := false // Ok once we've seen a letter.
+	partlen := 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		default:
+			return false
+		case 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || c == '_':
+			ok = true
+			partlen++
+		case '0' <= c && c <= '9':
+			// fine
+			partlen++
+		case c == '-':
+			// Byte before dash cannot be dot.
+			if last == '.' {
+				return false
+			}
+			partlen++
+		case c == '.':
+			// Byte before dot cannot be dot, dash.
+			if last == '.' || last == '-' {
+				return false
+			}
+			if partlen > 63 || partlen == 0 {
+				return false
+			}
+			partlen = 0
+		}
+		last = c
+	}
+	if last == '-' || partlen > 63 {
+		return false
+	}
+
+	return ok
 }
 
 func (sc *StringConstraint) Enum(l []interface{}) *StringConstraint {
@@ -134,6 +234,11 @@ func (sc *StringConstraint) RegexpString(pat string) *StringConstraint {
 
 func (sc *StringConstraint) Regexp(rx *regexp.Regexp) *StringConstraint {
 	sc.regexp = rx
+	return sc
+}
+
+func (sc *StringConstraint) Format(f schema.Format) *StringConstraint {
+	sc.format = f
 	return sc
 }
 

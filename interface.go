@@ -17,9 +17,9 @@ type Validator interface {
 }
 
 type JSVal struct {
-	root    Constraint
-	reflock sync.Mutex
-	refs    map[string]Constraint
+	root     Constraint
+	reflock  sync.Mutex
+	refs     map[string]Constraint
 	resolver *jsref.Resolver
 }
 
@@ -54,6 +54,7 @@ type StringConstraint struct {
 	maxLength int
 	minLength int
 	regexp    *regexp.Regexp
+	format    schema.Format
 }
 
 type NumberConstraint struct {

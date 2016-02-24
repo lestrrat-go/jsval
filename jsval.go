@@ -112,33 +112,6 @@ func (v *JSVal) GetReference(ref string) (Constraint, error) {
 	return c, nil
 }
 
-/*
-	switch c.(type) {
-	case Constraint:
-		return c.(Constraint), nil
-	case unresolved:
-		u := c.(unresolved)
-		thing, err := u.R.Resolve(u.S, ref)
-		if err != nil {
-			return nil, err
-		}
-
-		s, ok := thing.(*schema.Schema)
-		if !ok {
-			return nil, errors.New("resolved to something other than a schema")
-		}
-
-		c1, err := buildFromSchema(s)
-		if err != nil {
-			return nil, err
-		}
-		v.refs[ref] = c1
-		return c1, nil
-	default:
-		return nil, errors.New("invalid reference")
-	}
-*/
-
 func (v *JSVal) SetReference(ref string, c Constraint) {
 	if pdebug.Enabled {
 		pdebug.Printf("JSVal.SetReference %s", ref)
@@ -148,33 +121,6 @@ func (v *JSVal) SetReference(ref string, c Constraint) {
 	defer v.reflock.Unlock()
 	v.refs[ref] = c
 }
-
-/*
-func (ctx *buildctx) resolve(ref string) (Constraint, error) {
-	c, err := ctx.V.GetReference(ref)
-	if err == nil {
-		return c, nil
-	}
-
-	thing, err := ctx.resolver.Resolve(ctx.schema, ref)
-	if err != nil {
-		return nil, err
-	}
-
-	s, ok := thing.(*schema.Schema)
-	if !ok {
-		return nil, errors.New("resolved to something other than a schema")
-	}
-
-	c, err = ctx.V.buildFromSchema(s)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx.V.SetReference(ref, c)
-	return c, nil
-}
-*/
 
 func buildFromSchema(ctx *buildctx, s *schema.Schema) (Constraint, error) {
 	if ref := s.Reference; ref != "" {
@@ -255,7 +201,7 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (Constraint, error) {
 		ct.Add(tct.Reduce())
 	} else {
 		// No type?! deduce which constraints apply
-		if len(s.Properties) > 0 || (s.AdditionalProperties != nil && s.AdditionalProperties.Schema == nil) {
+		if schemaLooksLikeObject(s) {
 			oc := Object()
 			if err := oc.buildFromSchema(ctx, s); err != nil {
 				return nil, err
@@ -273,11 +219,18 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (Constraint, error) {
 	return ct.Reduce(), nil
 }
 
-func matchenum(v interface{}, values []interface{}) bool {
-	for _, x := range values {
-		if x == v {
-			return true
-		}
+func schemaLooksLikeObject(s *schema.Schema) bool {
+	if len(s.Properties) > 0 {
+		return true
 	}
+
+	if s.AdditionalProperties == nil {
+		return true
+	}
+
+	if s.AdditionalProperties.Schema != nil {
+		return true
+	}
+
 	return false
 }
