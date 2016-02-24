@@ -337,5 +337,8 @@ func generateArrayCode(ctx *genctx, out io.Writer, c *ArrayConstraint) error {
 
 func generateBooleanCode(ctx *genctx, out io.Writer, c *BooleanConstraint) error {
 	fmt.Fprintf(out, "%s%s.Boolean()", ctx.Prefix(), ctx.pkgname)
+	if c.HasDefault() {
+		fmt.Fprintf(out, ".Default(%t)", c.DefaultValue())
+	}
 	return nil
 }
