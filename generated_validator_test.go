@@ -75,11 +75,11 @@ func JSValFoo() *jsval.JSVal {
 			).
 			AddProp(
 				`exclusiveMaximum`,
-				jsval.Boolean(),
+				jsval.Boolean().Default(false),
 			).
 			AddProp(
 				`exclusiveMinimum`,
-				jsval.Boolean(),
+				jsval.Boolean().Default(false),
 			).
 			AddProp(
 				`id`,
@@ -177,7 +177,7 @@ func JSValFoo() *jsval.JSVal {
 			).
 			AddProp(
 				`uniqueItems`,
-				jsval.Boolean(),
+				jsval.Boolean().Default(false),
 			),
 	)
 
@@ -205,7 +205,7 @@ func JSValFoo() *jsval.JSVal {
 	)
 	V.SetReference(
 		`#/definitions/simpleTypes`,
-		jsval.String().Enum([]interface{}{"array", "boolean", "integer", "null", "number", "object", "string"}),
+		jsval.String().Enum([]interface{}{"array", "boolean", "integer", "null", "number", "object", "string"},),
 	)
 	V.SetReference(
 		`#/definitions/stringArray`,
