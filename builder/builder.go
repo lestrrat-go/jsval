@@ -138,7 +138,11 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (jsval.Constraint, error) 
 		if pdebug.Enabled {
 			pdebug.Printf("Not constraint")
 		}
-		ct.Add(jsval.EmptyConstraint)
+		c1, err := buildFromSchema(ctx, s.Not)
+		if err != nil {
+			return nil, err
+		}
+		ct.Add(jsval.Not(c1))
 	case len(s.AllOf) > 0:
 		if pdebug.Enabled {
 			pdebug.Printf("AllOf constraint")

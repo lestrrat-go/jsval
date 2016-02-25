@@ -122,3 +122,7 @@ type AnyConstraint struct {
 type AllConstraint struct {
 	comboconstraint
 }
+
+type NotConstraint struct {
+	child Constraint
+}
