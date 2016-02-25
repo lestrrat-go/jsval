@@ -88,6 +88,7 @@ type ObjectConstraint struct {
 	defaultValue
 	additionalProperties Constraint
 	deplock              sync.Mutex
+	patternProperties    map[*regexp.Regexp]Constraint
 	proplock             sync.Mutex
 	properties           map[string]Constraint
 	propdeps             map[string][]string

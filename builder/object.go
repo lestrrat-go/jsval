@@ -25,6 +25,14 @@ func buildObjectConstraint(ctx *buildctx, c *jsval.ObjectConstraint, s *schema.S
 		c.AddProp(pname, cprop)
 	}
 
+	for rx, pdef := range s.PatternProperties {
+		cprop, err := buildFromSchema(ctx, pdef)
+		if err != nil {
+			return err
+		}
+		c.PatternProperties(rx, cprop)
+	}
+
 	if aprops := s.AdditionalProperties; aprops != nil {
 		if sc := aprops.Schema; sc != nil {
 			aitem, err := buildFromSchema(ctx, sc)

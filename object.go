@@ -3,6 +3,7 @@ package jsval
 import (
 	"errors"
 	"reflect"
+	"regexp"
 
 	"github.com/lestrrat/go-pdebug"
 )
@@ -10,6 +11,7 @@ import (
 func Object() *ObjectConstraint {
 	return &ObjectConstraint{
 		additionalProperties: nil,
+		patternProperties:    make(map[*regexp.Regexp]Constraint),
 		properties:           make(map[string]Constraint),
 		propdeps:             make(map[string][]string),
 		required:             make(map[string]struct{}),
@@ -45,6 +47,14 @@ func (o *ObjectConstraint) AddProp(name string, c Constraint) *ObjectConstraint 
 	defer o.proplock.Unlock()
 
 	o.properties[name] = c
+	return o
+}
+
+func (o *ObjectConstraint) PatternProperties(key *regexp.Regexp, c Constraint) *ObjectConstraint {
+	o.proplock.Lock()
+	defer o.proplock.Unlock()
+
+	o.patternProperties[key] = c
 	return o
 }
 
@@ -179,6 +189,23 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 
 		if err := c.Validate(pval.Interface()); err != nil {
 			return errors.New("object property '" + pname + "' validation failed: " + err.Error())
+		}
+	}
+
+	for pat, c := range o.patternProperties {
+		for pname := range premain {
+			if !pat.MatchString(pname) {
+				continue
+			}
+			// No need to check if this pname exists, as we're taking
+			// this from "premain"
+			pval := rv.MapIndex(reflect.ValueOf(pname))
+
+			delete(premain, pname)
+			pseen[pname] = struct{}{}
+			if err := c.Validate(pval.Interface()); err != nil {
+				return errors.New("object property '" + pname + "' validation failed: " + err.Error())
+			}
 		}
 	}
 
