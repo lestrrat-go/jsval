@@ -9,6 +9,7 @@ import (
 
 func Array() *ArrayConstraint {
 	return &ArrayConstraint{
+		additionalItems: NilConstraint,
 		minItems: -1,
 	}
 }
@@ -47,7 +48,14 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 	} else {
 		// otherwise, check the positional specs, and apply the
 		// additionalItems constraint
+		lv := rv.Len()
 		for i, cpos := range c.positionalItems {
+			if lv <= i {
+				break
+			}
+			if pdebug.Enabled {
+				pdebug.Printf("Checking positional item at '%d'", i)
+			}
 			ev := rv.Index(i)
 			// We don't do defaults and stuff here, because it's virtually
 			// impossible to tell if this is "uninitialized"
@@ -57,7 +65,7 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 		}
 
 		lp := len(c.positionalItems)
-		if l >= lp { // we got more than positional schemas
+		if lp > 0 && l > lp { // we got more than positional schemas
 			cadd := c.additionalItems
 			if cadd == nil { // you can't have additionalItems!
 				return errors.New("additional elements found in array")
