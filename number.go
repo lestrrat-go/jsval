@@ -2,6 +2,7 @@ package jsval
 
 import (
 	"errors"
+	"math"
 	"reflect"
 
 	"github.com/lestrrat/go-pdebug"
@@ -131,6 +132,10 @@ func (ic *IntegerConstraint) ExclusiveMaximum(b bool) *IntegerConstraint {
 	return ic
 }
 
+// Validate validates the value against integer validation rules.
+// Note that because when Go decodes JSON it FORCES float64 on numbers,
+// this method will return true even if the *type* of the value is
+// float32/64. We just check that `math.Floor(v) == v`
 func (ic *IntegerConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START IntegerConstraint.Validate")
@@ -154,7 +159,13 @@ func (ic *IntegerConstraint) Validate(v interface{}) (err error) {
 		return ic.NumberConstraint.Validate(float64(rv.Int()))
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		return ic.NumberConstraint.Validate(float64(rv.Uint()))
+	case reflect.Float32, reflect.Float64:
+		fv := rv.Float()
+		if math.Floor(fv) != fv {
+			return errors.New("value is not an int/uint")
+		}
+		return ic.NumberConstraint.Validate(fv)
 	default:
-		return errors.New("value is not an int/uint")
+		return errors.New("value is not numeric")
 	}
 }
