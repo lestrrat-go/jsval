@@ -36,16 +36,27 @@ func buildArrayConstraint(ctx *buildctx, c *jsval.ArrayConstraint, s *schema.Sch
 			}
 			c.PositionalItems(specs)
 
-			if aitems := s.AdditionalItems; aitems != nil {
-				if as := aitems.Schema; as != nil {
-					spec, err := buildFromSchema(ctx, as)
-					if err != nil {
-						return err
-					}
-					c.AdditionalItems(spec)
-				} else {
-					c.AdditionalItems(jsval.NilConstraint)
+			aitems := s.AdditionalItems
+			if aitems == nil {
+				if pdebug.Enabled {
+					pdebug.Printf("Disabling additional items")
 				}
+				// No additional items
+				c.AdditionalItems(nil)
+			} else if as := aitems.Schema; as != nil {
+				spec, err := buildFromSchema(ctx, as)
+				if err != nil {
+					return err
+				}
+				if pdebug.Enabled {
+					pdebug.Printf("Using constraint for additional items ")
+				}
+				c.AdditionalItems(spec)
+			} else {
+				if pdebug.Enabled {
+					pdebug.Printf("Additional items will be allowed freely")
+				}
+				c.AdditionalItems(jsval.NilConstraint)
 			}
 		}
 	}
