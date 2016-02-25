@@ -139,6 +139,10 @@ func generateCode(ctx *genctx, out io.Writer, c Validator) error {
 		if err := generateObjectCode(ctx, buf, c.(*ObjectConstraint)); err != nil {
 			return err
 		}
+	case *OneOfConstraint:
+		if err := generateOneOfCode(ctx, buf, c.(*OneOfConstraint)); err != nil {
+			return err
+		}
 	case *ReferenceConstraint:
 		if err := generateReferenceCode(ctx, buf, c.(*ReferenceConstraint)); err != nil {
 			return err
@@ -162,10 +166,13 @@ func generateReferenceCode(ctx *genctx, out io.Writer, c *ReferenceConstraint) e
 	return nil
 }
 
-func generateAnyCode(ctx *genctx, out io.Writer, c *AnyConstraint) error {
+func generateComboCode(ctx *genctx, out io.Writer, name string, clist []Constraint) error {
+	if len(clist) == 0 {
+		return generateNilCode(ctx, out, EmptyConstraint)
+	}
 	p := ctx.Prefix()
-	fmt.Fprintf(out, "%s%s.Any()", p, ctx.pkgname)
-	for _, c1 := range c.constraints {
+	fmt.Fprintf(out, "%s%s.%s()", p, ctx.pkgname, name)
+	for _, c1 := range clist {
 		g1 := ctx.Indent()
 		fmt.Fprintf(out, ".\n%sAdd(\n", ctx.Prefix())
 		g2 := ctx.Indent()
@@ -181,27 +188,16 @@ func generateAnyCode(ctx *genctx, out io.Writer, c *AnyConstraint) error {
 	return nil
 }
 
-func generateAllCode(ctx *genctx, out io.Writer, c *AllConstraint) error {
-	if len(c.constraints) == 0 {
-		return generateNilCode(ctx, out, EmptyConstraint)
-	}
+func generateAnyCode(ctx *genctx, out io.Writer, c *AnyConstraint) error {
+	return generateComboCode(ctx, out, "Any", c.constraints)
+}
 
-	p := ctx.Prefix()
-	fmt.Fprintf(out, "%s%s.All()", p, ctx.pkgname)
-	for _, c1 := range c.constraints {
-		g1 := ctx.Indent()
-		fmt.Fprintf(out, ".\n%sAdd(\n", ctx.Prefix())
-		g2 := ctx.Indent()
-		if err := generateCode(ctx, out, c1); err != nil {
-			g2()
-			g1()
-			return err
-		}
-		g2()
-		fmt.Fprintf(out, ",\n%s)", ctx.Prefix())
-		g1()
-	}
-	return nil
+func generateAllCode(ctx *genctx, out io.Writer, c *AllConstraint) error {
+	return generateComboCode(ctx, out, "All", c.constraints)
+}
+
+func generateOneOfCode(ctx *genctx, out io.Writer, c *OneOfConstraint) error {
+	return generateComboCode(ctx, out, "OneOf", c.constraints)
 }
 
 func generateIntegerCode(ctx *genctx, out io.Writer, c *IntegerConstraint) error {
