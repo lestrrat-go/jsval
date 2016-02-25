@@ -85,17 +85,6 @@ func (r *ReferenceConstraint) HasDefault() bool {
 	return c.HasDefault()
 }
 
-func (r *ReferenceConstraint) Required(_ bool) {
-}
-
-func (r *ReferenceConstraint) IsRequired() bool {
-	c, err := r.Resolved()
-	if err != nil {
-		return false
-	}
-	return c.IsRequired()
-}
-
 func (r *ReferenceConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START ReferenceConstraint.Validate")

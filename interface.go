@@ -27,8 +27,6 @@ type Constraint interface {
 	buildFromSchema(*buildctx, *schema.Schema) error
 	DefaultValue() interface{}
 	HasDefault() bool
-	IsRequired() bool
-	Required(bool)
 	Validate(interface{}) error
 }
 
@@ -36,7 +34,6 @@ type nilConstraint struct{}
 
 var NilConstraint = nilConstraint{}
 
-type required bool
 type defaultValue struct {
 	initialized bool
 	value       interface{}
@@ -44,12 +41,10 @@ type defaultValue struct {
 
 type BooleanConstraint struct {
 	defaultValue
-	required
 }
 
 type StringConstraint struct {
 	defaultValue
-	required
 	enums     *EnumConstraint
 	maxLength int
 	minLength int
@@ -59,7 +54,6 @@ type StringConstraint struct {
 
 type NumberConstraint struct {
 	defaultValue
-	required
 	applyMinimum     bool
 	applyMaximum     bool
 	minimum          float64
@@ -75,7 +69,6 @@ type IntegerConstraint struct {
 
 type ArrayConstraint struct {
 	defaultValue
-	required
 	itemspec        Constraint
 	positionalItems []Constraint
 	additionalItems Constraint
@@ -88,10 +81,14 @@ var DefaultFieldNamesFromStruct = structinfo.JSONFieldsFromStruct
 
 type ObjectConstraint struct {
 	defaultValue
-	required
-	lock                 sync.Mutex
-	properties           map[string]Constraint
 	additionalProperties Constraint
+	deplock              sync.Mutex
+	proplock             sync.Mutex
+	properties           map[string]Constraint
+	propdeps             map[string][]string
+	reqlock              sync.Mutex
+	required             map[string]struct{}
+	schemadeps           map[string]Constraint
 	FieldNamesFromStruct func(reflect.Value) []string
 }
 

@@ -178,7 +178,9 @@ func JSValFoo() *jsval.JSVal {
 			AddProp(
 				`uniqueItems`,
 				jsval.Boolean().Default(false),
-			),
+			).
+			PropDependency("exclusiveMinimum", "minimum").
+			PropDependency("exclusiveMaximum", "maximum"),
 	)
 
 	V.SetReference(

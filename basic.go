@@ -25,18 +25,3 @@ func (nc nilConstraint) HasDefault() bool {
 func (nc nilConstraint) DefaultValue() interface{} {
 	return nil
 }
-
-func (nc nilConstraint) IsRequired() bool {
-	return false
-}
-
-func (nc nilConstraint) Required(_ bool) {
-}
-
-func (r required) IsRequired() bool {
-	return bool(r)
-}
-
-func (r *required) Required(v bool) {
-	*r = required(v)
-}

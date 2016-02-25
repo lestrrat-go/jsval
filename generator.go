@@ -183,10 +183,6 @@ func generateAllCode(ctx *genctx, out io.Writer, c *AllConstraint) error {
 func generateIntegerCode(ctx *genctx, out io.Writer, c *IntegerConstraint) error {
 	fmt.Fprintf(out, "%s%s.Integer()", ctx.Prefix(), ctx.pkgname)
 
-	if c.IsRequired() {
-		fmt.Fprintf(out, ".Required()")
-	}
-
 	if c.applyMinimum {
 		fmt.Fprintf(out, ".Minimum(%d)", int(c.minimum))
 	}
@@ -200,10 +196,6 @@ func generateIntegerCode(ctx *genctx, out io.Writer, c *IntegerConstraint) error
 
 func generateNumberCode(ctx *genctx, out io.Writer, c *NumberConstraint) error {
 	fmt.Fprintf(out, "%s%s.Number()", ctx.Prefix(), ctx.pkgname)
-
-	if c.IsRequired() {
-		fmt.Fprintf(out, ".Required()")
-	}
 
 	if c.applyMinimum {
 		fmt.Fprintf(out, ".Minimum(%f)", c.minimum)
@@ -289,6 +281,24 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 		fmt.Fprintf(out, ".\n%sDefault(%s)", p, c.DefaultValue())
 	}
 
+	if len(c.required) > 0 {
+		fmt.Fprintf(out, ".\n%sRequired([]string{", p)
+		l := len(c.required)
+		pnames := make([]string, 0, l)
+		for pname := range c.required {
+			pnames = append(pnames, pname)
+		}
+		sort.Strings(pnames)
+		for i, pname := range pnames {
+			fmt.Fprint(out, strconv.Quote(pname))
+			if i < l - 1 {
+				fmt.Fprint(out, ", ")
+			}
+		}
+		fmt.Fprint(out, "})")
+	}
+
+
 	if aprop := c.additionalProperties; aprop != nil {
 		fmt.Fprintf(out, ".\n%sAdditionalProperties(\n", p)
 		g := ctx.Indent()
@@ -318,6 +328,15 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 		fmt.Fprintf(out, ",\n%s)", p)
 		g()
 	}
+
+	if m := c.propdeps; len(m) > 0 {
+		for from, deplist := range m {
+			for _, to := range deplist {
+				fmt.Fprintf(out, ".\n%sPropDependency(%s, %s)", ctx.Prefix(), strconv.Quote(from), strconv.Quote(to))
+			}
+		}
+	}
+
 	return nil
 }
 

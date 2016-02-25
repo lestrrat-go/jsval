@@ -68,3 +68,48 @@ func TestObject(t *testing.T) {
 	}
 }
 
+func TestObjectDependency(t *testing.T) {
+	const src = `{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+	  "foo": { "type": "string" },
+	  "bar": { "type": "string" }
+  },
+  "dependencies": {
+	  "foo": ["bar"]
+  }
+}`
+
+	s, err := schema.Read(strings.NewReader(src))
+	if !assert.NoError(t, err, "reading schema should succeed") {
+		return
+	}
+
+	v := New()
+	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
+		return
+	}
+
+	data := []interface{}{
+		map[string]interface{}{"foo": "foo"},
+	}
+	for _, input := range data {
+		t.Logf("Testing %#v (should FAIL)", input)
+		if !assert.Error(t, v.Validate(input), "validation fails") {
+			return
+		}
+	}
+
+	data = []interface{}{
+		map[string]interface{}{"foo": "foo", "bar": "bar"},
+	}
+	for _, input := range data {
+		t.Logf("Testing %#v (should PASS)", input)
+		if !assert.NoError(t, v.Validate(input), "validation passes") {
+			return
+		}
+	}
+}
+
+
