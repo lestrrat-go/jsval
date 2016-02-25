@@ -9,8 +9,10 @@ import (
 )
 
 func (nc *NumberConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
-	if !s.Type.Contains(schema.NumberType) && !s.Type.Contains(schema.IntegerType) {
-		return errors.New("schema is not for number")
+	if len(s.Type) > 0 {
+		if !s.Type.Contains(schema.NumberType) && !s.Type.Contains(schema.IntegerType) {
+			return errors.New("schema is not for number")
+		}
 	}
 
 	if s.Minimum.Initialized {

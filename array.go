@@ -8,8 +8,18 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
-func (c *ArrayConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
-	var err error
+func (c *ArrayConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) (err error) {
+	if pdebug.Enabled {
+		g := pdebug.IPrintf("START ArrayConstraint.buildFromSchema")
+		defer func() {
+			if err == nil {
+				g.IRelease("END ArrayConstraint.buildFromSchema (PASS)")
+			} else {
+				g.IRelease("END ArrayConstraint.buildFromSchema (FAIL): %s", err)
+			}
+		}()
+	}
+
 	if items := s.Items; items != nil {
 		if !items.TupleMode {
 			c.itemspec, err = buildFromSchema(ctx, items.Schemas[0])

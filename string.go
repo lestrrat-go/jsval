@@ -20,8 +20,10 @@ func (sc *StringConstraint) Default(v interface{}) *StringConstraint {
 }
 
 func (c *StringConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
-	if !s.Type.Contains(schema.StringType) {
-		return errors.New("schema is not for string")
+	if len(s.Type) > 0 {
+		if !s.Type.Contains(schema.StringType) {
+			return errors.New("schema is not for string")
+		}
 	}
 
 	if s.MaxLength.Initialized {

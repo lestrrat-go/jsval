@@ -2,6 +2,9 @@ package jsval
 
 import (
 	"errors"
+	"math"
+	"reflect"
+	"sort"
 
 	"github.com/lestrrat/go-jsref"
 	"github.com/lestrrat/go-jsschema"
@@ -198,9 +201,21 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (Constraint, error) {
 		ct.Add(NilConstraint)
 	}
 
+	var sts schema.PrimitiveTypes
 	if l := len(s.Type); l > 0 {
+		sts = make(schema.PrimitiveTypes, l)
+		copy(sts, s.Type)
+	} else {
+		if pdebug.Enabled {
+			pdebug.Printf("Schema doesn't seem to contain a 'type' field. Now guessing...")
+		}
+		sts = guessSchemaType(s)
+	}
+	sort.Sort(sts)
+
+	if len(sts) > 0 {
 		tct := Any()
-		for _, st := range s.Type {
+		for _, st := range sts {
 			var c Constraint
 			switch st {
 			case schema.StringType:
@@ -225,15 +240,6 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (Constraint, error) {
 		}
 		ct.Add(tct.Reduce())
 	} else {
-		// No type?! deduce which constraints apply
-		if schemaLooksLikeObject(s) {
-			oc := Object()
-			if err := oc.buildFromSchema(ctx, s); err != nil {
-				return nil, err
-			}
-			ct.Add(oc)
-		}
-
 		// All else failed, check if we have some enumeration?
 		if len(s.Enum) > 0 {
 			ec := Enum(s.Enum...)
@@ -242,6 +248,55 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (Constraint, error) {
 	}
 
 	return ct.Reduce(), nil
+}
+
+func guessSchemaType(s *schema.Schema) schema.PrimitiveTypes {
+	if pdebug.Enabled {
+		g := pdebug.IPrintf("START guessSchemaType")
+		defer g.IRelease("END guessSchemaType")
+	}
+
+	var sts schema.PrimitiveTypes
+	if schemaLooksLikeObject(s) {
+		if pdebug.Enabled {
+			pdebug.Printf("Looks like it could be an object...")
+		}
+		sts = append(sts, schema.ObjectType)
+	}
+
+	if schemaLooksLikeArray(s) {
+		if pdebug.Enabled {
+			pdebug.Printf("Looks like it could be an array...")
+		}
+		sts = append(sts, schema.ArrayType)
+	}
+
+	if schemaLooksLikeString(s) {
+		if pdebug.Enabled {
+			pdebug.Printf("Looks like it could be a string...")
+		}
+		sts = append(sts, schema.StringType)
+	}
+
+	if ok, typ := schemaLooksLikeNumber(s); ok {
+		if pdebug.Enabled {
+			pdebug.Printf("Looks like it could be a number...")
+		}
+		sts = append(sts, typ)
+	}
+
+	if schemaLooksLikeBool(s) {
+		if pdebug.Enabled {
+			pdebug.Printf("Looks like it could be a bool...")
+		}
+		sts = append(sts, schema.BooleanType)
+	}
+
+	if pdebug.Enabled {
+		pdebug.Printf("Guessed types: %#v", sts)
+	}
+
+	return sts
 }
 
 func schemaLooksLikeObject(s *schema.Schema) bool {
@@ -255,6 +310,158 @@ func schemaLooksLikeObject(s *schema.Schema) bool {
 
 	if s.AdditionalProperties.Schema != nil {
 		return true
+	}
+
+	if s.MinProperties.Initialized {
+		return true
+	}
+
+	if s.MaxProperties.Initialized {
+		return true
+	}
+
+	if len(s.Required) > 0 {
+		return true
+	}
+
+	if len(s.PatternProperties) > 0 {
+		return true
+	}
+
+	for _, v := range s.Enum {
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Map, reflect.Struct:
+			return true
+		}
+	}
+
+	return false
+}
+
+func schemaLooksLikeArray(s *schema.Schema) bool {
+	if s.Items != nil {
+		return true
+	}
+
+	if s.AdditionalItems == nil {
+		return true
+	}
+
+	if s.AdditionalItems.Schema != nil {
+		return true
+	}
+
+	if s.Items != nil {
+		return true
+	}
+
+	if s.MinItems.Initialized {
+		return true
+	}
+
+	if s.MaxItems.Initialized {
+		return true
+	}
+
+	if s.UniqueItems.Initialized {
+		return true
+	}
+
+	for _, v := range s.Enum {
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Slice:
+			return true
+		}
+	}
+
+	return false
+}
+
+func schemaLooksLikeString(s *schema.Schema) bool {
+	if s.MinLength.Initialized {
+		return true
+	}
+
+	if s.MaxLength.Initialized {
+		return true
+	}
+
+	if s.Pattern != nil {
+		return true
+	}
+
+	switch s.Format {
+	case schema.FormatDateTime, schema.FormatEmail, schema.FormatHostname, schema.FormatIPv4, schema.FormatIPv6, schema.FormatURI:
+		return true
+	}
+
+	for _, v := range s.Enum {
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.String:
+			return true
+		}
+	}
+
+	return false
+}
+
+func isInteger(n schema.Number) bool {
+	return math.Floor(n.Val) == n.Val
+}
+
+func schemaLooksLikeNumber(s *schema.Schema) (bool, schema.PrimitiveType) {
+	if s.MultipleOf.Initialized {
+		if isInteger(s.MultipleOf) {
+			return true, schema.IntegerType
+		}
+		return true, schema.NumberType
+	}
+
+	if s.Minimum.Initialized {
+		if isInteger(s.Minimum) {
+			return true, schema.IntegerType
+		}
+		return true, schema.NumberType
+	}
+
+	if s.Maximum.Initialized {
+		if isInteger(s.Maximum) {
+			return true, schema.IntegerType
+		}
+		return true, schema.NumberType
+	}
+
+	if s.ExclusiveMinimum.Initialized {
+		return true, schema.NumberType
+	}
+
+	if s.ExclusiveMaximum.Initialized {
+		return true, schema.NumberType
+	}
+
+	for _, v := range s.Enum {
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return true, schema.IntegerType
+		case reflect.Float32, reflect.Float64:
+			return true, schema.NumberType
+		}
+	}
+
+	return false, schema.UnspecifiedType
+}
+
+func schemaLooksLikeBool(s *schema.Schema) bool {
+	for _, v := range s.Enum {
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Bool:
+			return true
+		}
 	}
 
 	return false
