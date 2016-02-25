@@ -100,27 +100,51 @@ func generateCode(ctx *genctx, out io.Writer, c Validator) error {
 
 	switch c.(type) {
 	case emptyConstraint:
-		generateNilCode(ctx, buf, c.(emptyConstraint))
+		if err := generateNilCode(ctx, buf, c.(emptyConstraint)); err != nil {
+			return err
+		}
 	case *JSVal:
-		generateValidatorCode(ctx, buf, c.(*JSVal))
+		if err := generateValidatorCode(ctx, buf, c.(*JSVal)); err != nil {
+			return err
+		}
 	case *AnyConstraint:
-		generateAnyCode(ctx, buf, c.(*AnyConstraint))
+		if err := generateAnyCode(ctx, buf, c.(*AnyConstraint)); err != nil {
+			return err
+		}
 	case *AllConstraint:
-		generateAllCode(ctx, buf, c.(*AllConstraint))
-	case *BooleanConstraint:
-		generateBooleanCode(ctx, buf, c.(*BooleanConstraint))
-	case *StringConstraint:
-		generateStringCode(ctx, buf, c.(*StringConstraint))
-	case *IntegerConstraint:
-		generateIntegerCode(ctx, buf, c.(*IntegerConstraint))
-	case *NumberConstraint:
-		generateNumberCode(ctx, buf, c.(*NumberConstraint))
-	case *ReferenceConstraint:
-		generateReferenceCode(ctx, buf, c.(*ReferenceConstraint))
+		if err := generateAllCode(ctx, buf, c.(*AllConstraint)); err != nil {
+			return err
+		}
 	case *ArrayConstraint:
-		generateArrayCode(ctx, buf, c.(*ArrayConstraint))
+		if err := generateArrayCode(ctx, buf, c.(*ArrayConstraint)); err != nil {
+			return err
+		}
+	case *BooleanConstraint:
+		if err := generateBooleanCode(ctx, buf, c.(*BooleanConstraint)); err != nil {
+			return err
+		}
+	case *IntegerConstraint:
+		if err := generateIntegerCode(ctx, buf, c.(*IntegerConstraint)); err != nil {
+			return err
+		}
+	case *NotConstraint:
+		if err := generateNotCode(ctx, buf, c.(*NotConstraint)); err != nil {
+			return err
+		}
+	case *NumberConstraint:
+		if err := generateNumberCode(ctx, buf, c.(*NumberConstraint)); err != nil {
+			return err
+		}
 	case *ObjectConstraint:
 		if err := generateObjectCode(ctx, buf, c.(*ObjectConstraint)); err != nil {
+			return err
+		}
+	case *ReferenceConstraint:
+		if err := generateReferenceCode(ctx, buf, c.(*ReferenceConstraint)); err != nil {
+			return err
+		}
+	case *StringConstraint:
+		if err := generateStringCode(ctx, buf, c.(*StringConstraint)); err !=nil {
 			return err
 		}
 	}
@@ -359,5 +383,17 @@ func generateBooleanCode(ctx *genctx, out io.Writer, c *BooleanConstraint) error
 	if c.HasDefault() {
 		fmt.Fprintf(out, ".Default(%t)", c.DefaultValue())
 	}
+	return nil
+}
+
+func generateNotCode(ctx *genctx, out io.Writer, c *NotConstraint) error {
+	fmt.Fprintf(out, "%s%s.Not(\n", ctx.Prefix(), ctx.pkgname)
+	g := ctx.Indent()
+	if err := generateCode(ctx, out, c.child); err != nil {
+		g()
+		return err
+	}
+	g()
+	fmt.Fprintf(out, "\n%s)", ctx.Prefix())
 	return nil
 }
