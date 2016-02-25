@@ -62,3 +62,31 @@ func (c *AllConstraint) Validate(v interface{}) error {
 	return nil
 }
 
+func OneOf() *OneOfConstraint {
+	return &OneOfConstraint{}
+}
+
+func (c *OneOfConstraint) Reduce() Constraint {
+	return reduceCombined(c)
+}
+
+func (c *OneOfConstraint) Add(c2 Constraint) *OneOfConstraint {
+	c.comboconstraint.Add(c2)
+	return c
+}
+
+func (c *OneOfConstraint) Validate(v interface{}) error {
+	count := 0
+	for _, celem := range c.constraints {
+		if err := celem.Validate(v); err == nil {
+			count++
+		}
+	}
+
+	if count == 0 {
+		return errors.New("none of the constraints passed")
+	} else if count > 1 {
+		return errors.New("more than 1 of the constraints passed")
+	}
+	return nil // Yes!
+}

@@ -125,6 +125,10 @@ type AllConstraint struct {
 	comboconstraint
 }
 
+type OneOfConstraint struct {
+	comboconstraint
+}
+
 type NotConstraint struct {
 	child Constraint
 }

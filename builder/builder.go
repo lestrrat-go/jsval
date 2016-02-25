@@ -173,7 +173,15 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (jsval.Constraint, error) 
 		if pdebug.Enabled {
 			pdebug.Printf("OneOf constraint")
 		}
-		ct.Add(jsval.EmptyConstraint)
+		oc := jsval.OneOf()
+		for _, s1 := range s.OneOf {
+			c1, err := buildFromSchema(ctx, s1)
+			if err != nil {
+				return nil, err
+			}
+			oc.Add(c1)
+		}
+		ct.Add(oc.Reduce())
 	}
 
 	var sts schema.PrimitiveTypes
