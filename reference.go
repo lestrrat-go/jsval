@@ -1,10 +1,8 @@
 package jsval
 
 import (
-	"errors"
 	"sync"
 
-	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-pdebug"
 )
 
@@ -23,15 +21,6 @@ func Reference(v *JSVal) *ReferenceConstraint {
 	}
 }
 
-func (r *ReferenceConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
-	pdebug.Printf("ReferenceConstraint.buildFromSchema '%s'", s.Reference)
-	if s.Reference == "" {
-		return errors.New("schema does not contain a reference")
-	}
-	r.reference = s.Reference
-
-	return nil
-}
 func (r *ReferenceConstraint) Resolved() (c Constraint, err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START ReferenceConstraint.Resolved '%s'", r.reference)

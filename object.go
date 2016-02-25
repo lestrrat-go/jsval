@@ -4,58 +4,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-pdebug"
 )
-
-func (c *ObjectConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
-	if pdebug.Enabled {
-		g := pdebug.IPrintf("START ObjectConstraint.FromSchema")
-		defer g.IRelease("END ObjectConstraint.FromSchema")
-	}
-
-	if l := s.Required; len(l) > 0 {
-		c.Required(l...)
-	}
-
-	for pname, pdef := range s.Properties {
-		cprop, err := buildFromSchema(ctx, pdef)
-		if err != nil {
-			return err
-		}
-
-		c.AddProp(pname, cprop)
-	}
-
-	if aprops := s.AdditionalProperties; aprops != nil {
-		if sc := aprops.Schema; sc != nil {
-			aitem, err := buildFromSchema(ctx, sc)
-			if err != nil {
-				return err
-			}
-			c.AdditionalProperties(aitem)
-		} else {
-			c.AdditionalProperties(NilConstraint)
-		}
-	}
-
-	for from, to := range s.Dependencies.Names {
-		c.PropDependency(from, to...)
-	}
-
-	if depschemas := s.Dependencies.Schemas; len(depschemas) > 0 {
-		for pname, depschema := range depschemas {
-			depc, err := buildFromSchema(ctx, depschema)
-			if err != nil {
-				return err
-			}
-
-			c.SchemaDependency(pname, depc)
-		}
-	}
-
-	return nil
-}
 
 func Object() *ObjectConstraint {
 	return &ObjectConstraint{

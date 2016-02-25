@@ -1,10 +1,12 @@
-package jsval
+package jsval_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/lestrrat/go-jsschema"
+	"github.com/lestrrat/go-jsval"
+	"github.com/lestrrat/go-jsval/builder"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,20 +23,21 @@ func TestNumberFromSchema(t *testing.T) {
 		return
 	}
 
-	v := New()
-	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
+	b := builder.New()
+	v, err := b.Build(s)
+	if !assert.NoError(t, err, "Builder.Build should succeed") {
 		return
 	}
 
-	c2 := Number()
+	c2 := jsval.Number()
 	c2.Default(float64(10)).Maximum(15).Minimum(5)
-	if !assert.Equal(t, c2, v.root, "constraints are equal") {
+	if !assert.Equal(t, c2, v.Root(), "constraints are equal") {
 		return
 	}
 }
 
 func TestNumber(t *testing.T) {
-	c := Number()
+	c := jsval.Number()
 	c.Default(float64(10)).Maximum(15)
 
 	if !assert.True(t, c.HasDefault(), "HasDefault is true") {

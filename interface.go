@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/lestrrat/go-jsref"
-	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-structinfo"
 )
 
@@ -24,7 +23,6 @@ type JSVal struct {
 }
 
 type Constraint interface {
-	buildFromSchema(*buildctx, *schema.Schema) error
 	DefaultValue() interface{}
 	HasDefault() bool
 	Validate(interface{}) error
@@ -49,7 +47,7 @@ type StringConstraint struct {
 	maxLength int
 	minLength int
 	regexp    *regexp.Regexp
-	format    schema.Format
+	format    string
 }
 
 type NumberConstraint struct {
@@ -69,7 +67,7 @@ type IntegerConstraint struct {
 
 type ArrayConstraint struct {
 	defaultValue
-	itemspec        Constraint
+	items           Constraint
 	positionalItems []Constraint
 	additionalItems Constraint
 	minItems        int

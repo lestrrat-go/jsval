@@ -4,64 +4,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-pdebug"
 )
-
-func (c *ArrayConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) (err error) {
-	if pdebug.Enabled {
-		g := pdebug.IPrintf("START ArrayConstraint.buildFromSchema")
-		defer func() {
-			if err == nil {
-				g.IRelease("END ArrayConstraint.buildFromSchema (PASS)")
-			} else {
-				g.IRelease("END ArrayConstraint.buildFromSchema (FAIL): %s", err)
-			}
-		}()
-	}
-
-	if items := s.Items; items != nil {
-		if !items.TupleMode {
-			c.itemspec, err = buildFromSchema(ctx, items.Schemas[0])
-			if err != nil {
-				return err
-			}
-		} else {
-			c.positionalItems = make([]Constraint, len(items.Schemas))
-			for i, espec := range items.Schemas {
-				c.positionalItems[i], err = buildFromSchema(ctx, espec)
-				if err != nil {
-					return err
-				}
-			}
-
-			if aitems := s.AdditionalItems; aitems != nil {
-				if as := aitems.Schema; as != nil {
-					c.additionalItems, err = buildFromSchema(ctx, as)
-					if err != nil {
-						return err
-					}
-				} else {
-					c.additionalItems = NilConstraint
-				}
-			}
-		}
-	}
-
-	if s.MinItems.Initialized {
-		c.minItems = s.MinItems.Val
-	}
-
-	if s.MaxItems.Initialized {
-		c.maxItems = s.MaxItems.Val
-	}
-
-	if s.UniqueItems.Initialized {
-		c.uniqueItems = s.UniqueItems.Val
-	}
-
-	return nil
-}
 
 func Array() *ArrayConstraint {
 	return &ArrayConstraint{
@@ -89,7 +33,7 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 	}
 
 	l := rv.Len()
-	if celem := c.itemspec; celem != nil {
+	if celem := c.items; celem != nil {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking if all items match a spec")
 		}
@@ -128,6 +72,16 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 	return nil
 }
 
+func (c *ArrayConstraint) AdditionalItems(ac Constraint) *ArrayConstraint {
+	c.additionalItems = ac
+	return c
+}
+
+func (c *ArrayConstraint) Items(ac Constraint) *ArrayConstraint {
+	c.items = ac
+	return c
+}
+
 func (c *ArrayConstraint) MinItems(i int) *ArrayConstraint {
 	c.minItems = i
 	return c
@@ -138,7 +92,12 @@ func (c *ArrayConstraint) MaxItems(i int) *ArrayConstraint {
 	return c
 }
 
-func (c *ArrayConstraint) UniqueItems() *ArrayConstraint {
-	c.uniqueItems = true
+func (c *ArrayConstraint) PositionalItems(ac []Constraint) *ArrayConstraint {
+	c.positionalItems = ac
+	return c
+}
+
+func (c *ArrayConstraint) UniqueItems(b bool) *ArrayConstraint {
+	c.uniqueItems = b
 	return c
 }

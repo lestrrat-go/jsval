@@ -349,7 +349,7 @@ func generateArrayCode(ctx *genctx, out io.Writer, c *ArrayConstraint) error {
 		fmt.Fprintf(out, ".MaxItems(%d)", c.maxItems)
 	}
 	if c.uniqueItems {
-		fmt.Fprintf(out, ".UniqueItems()")
+		fmt.Fprintf(out, ".UniqueItems(true)")
 	}
 	return nil
 }

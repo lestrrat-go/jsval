@@ -10,6 +10,7 @@ import (
 	"github.com/lestrrat/go-jsref"
 	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-jsval"
+	"github.com/lestrrat/go-jsval/builder"
 )
 
 func main() {
@@ -73,8 +74,9 @@ func _main() int {
 		}
 	}
 
-	v := jsval.New()
-	if err := v.BuildWithCtx(s, m); err != nil {
+	b := builder.New()
+	v, err := b.Build(s)
+	if err != nil {
 		log.Printf("%s", err)
 		return 1
 	}

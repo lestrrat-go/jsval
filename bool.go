@@ -3,18 +3,7 @@ package jsval
 import (
 	"errors"
 	"reflect"
-
-	"github.com/lestrrat/go-jsschema"
 )
-
-func (c *BooleanConstraint) buildFromSchema(_ *buildctx, s *schema.Schema) error {
-	v := s.Default
-	switch v.(type) {
-	case bool:
-		c.Default(v.(bool))
-	}
-	return nil
-}
 
 func Boolean() *BooleanConstraint {
 	return &BooleanConstraint{}

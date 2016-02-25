@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-pdebug"
 )
 
@@ -17,40 +16,6 @@ func (sc *StringConstraint) Default(v interface{}) *StringConstraint {
 	sc.defaultValue.initialized = true
 	sc.defaultValue.value = v
 	return sc
-}
-
-func (c *StringConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
-	if len(s.Type) > 0 {
-		if !s.Type.Contains(schema.StringType) {
-			return errors.New("schema is not for string")
-		}
-	}
-
-	if s.MaxLength.Initialized {
-		c.MaxLength(s.MaxLength.Val)
-	}
-
-	if s.MinLength.Initialized {
-		c.MinLength(s.MinLength.Val)
-	}
-
-	if pat := s.Pattern; pat != nil {
-		c.Regexp(pat)
-	}
-
-	if f := s.Format; f != "" {
-		c.Format(f)
-	}
-
-	if lst := s.Enum; len(lst) > 0 {
-		c.Enum(lst)
-	}
-
-	if v := s.Default; v != nil {
-		c.Default(v)
-	}
-
-	return nil
 }
 
 // Note that StringConstraint does not apply default values to the
@@ -102,20 +67,20 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 		}
 	}
 
-	switch s.format {
-	case schema.FormatDateTime:
+	switch s.format{
+	case "datetime":
 		if _, err = time.Parse(time.RFC3339, str); err != nil {
 			return errors.New("invalid datetime")
 		}
-	case schema.FormatEmail:
+	case "email":
 		if _, err = mail.ParseAddress(str); err != nil {
 			return errors.New("invalid email address: " + err.Error())
 		}
-	case schema.FormatHostname:
+	case "hostname":
 		if !isDomainName(str) {
 			return errors.New("invalid hostname")
 		}
-	case schema.FormatIPv4:
+	case "ipv4":
 		// Should only contain numbers and "."
 		for _, r := range str {
 			switch {
@@ -127,7 +92,7 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 		if addr := net.ParseIP(str); addr == nil {
 			return errors.New("invalid IPv4 address")
 		}
-	case schema.FormatIPv6:
+	case "ipv6":
 		// Should only contain numbers and ":"
 		for _, r := range str {
 			switch {
@@ -139,7 +104,7 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 		if addr := net.ParseIP(str); addr == nil {
 			return errors.New("invalid IPv6 address")
 		}
-	case schema.FormatURI:
+	case "uri":
 		if _, err = url.Parse(str); err != nil {
 			return errors.New("invalid URI")
 		}
@@ -239,7 +204,7 @@ func (sc *StringConstraint) Regexp(rx *regexp.Regexp) *StringConstraint {
 	return sc
 }
 
-func (sc *StringConstraint) Format(f schema.Format) *StringConstraint {
+func (sc *StringConstraint) Format(f string) *StringConstraint {
 	sc.format = f
 	return sc
 }

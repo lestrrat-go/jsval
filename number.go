@@ -4,41 +4,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-pdebug"
 )
-
-func (nc *NumberConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) error {
-	if len(s.Type) > 0 {
-		if !s.Type.Contains(schema.NumberType) && !s.Type.Contains(schema.IntegerType) {
-			return errors.New("schema is not for number")
-		}
-	}
-
-	if s.Minimum.Initialized {
-		nc.Minimum(s.Minimum.Val)
-		if s.ExclusiveMinimum.Initialized {
-			nc.exclusiveMinimum = s.ExclusiveMinimum.Val
-		}
-	}
-
-	if s.Maximum.Initialized {
-		nc.Maximum(s.Maximum.Val)
-		if s.ExclusiveMaximum.Initialized {
-			nc.exclusiveMaximum = s.ExclusiveMaximum.Val
-		}
-	}
-
-	if lst := s.Enum; len(lst) > 0 {
-		nc.Enum(lst)
-	}
-
-	if v := s.Default; v != nil {
-		nc.Default(v)
-	}
-
-	return nil
-}
 
 func (nc *NumberConstraint) Enum(l []interface{}) *NumberConstraint {
 	if nc.enums == nil {
