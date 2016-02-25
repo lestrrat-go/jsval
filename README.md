@@ -73,3 +73,11 @@ against the `positiveInteger` schema:
 * More complete coverage of JSON Schema. Many validation statements are still not implmented (Please file issues if you find any!)
 * Work with schemas that does not present a "type" field.
 
+# References
+
+| Name                                                     | Notes                         |
+|:--------------------------------------------------------:|:------------------------------|
+| [go-jsschema](https://github.com/lestrrat/go-jsschema)   | JSON Schema implementation    |
+| [go-jsref](https://github.com/lestrrat/go-jsref)         | JSON Reference implementation |
+| [go-jspointer](https://github.com/lestrrat/go-jspointer) | JSON Pointer implementations  |
+
