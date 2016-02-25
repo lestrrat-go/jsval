@@ -2,6 +2,7 @@ package jsval
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/lestrrat/go-pdebug"
@@ -10,8 +11,8 @@ import (
 func Array() *ArrayConstraint {
 	return &ArrayConstraint{
 		additionalItems: EmptyConstraint,
-		maxItems: -1,
-		minItems: -1,
+		maxItems:        -1,
+		minItems:        -1,
 	}
 }
 
@@ -44,6 +45,21 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 		return errors.New("more items than maxItems")
 	}
 
+	var uitems map[string]struct{}
+	if c.uniqueItems {
+		pdebug.Printf("Check for unique items enabled")
+		uitems = make(map[string]struct{})
+		for i := 0; i < l; i++ {
+			iv := rv.Index(i).Interface()
+			kv := fmt.Sprintf("%s", iv)
+pdebug.Printf("unique? -> %s", kv)
+			if _, ok := uitems[kv]; ok {
+				return errors.New("duplicate element found")
+			}
+			uitems[kv] = struct{}{}
+		}
+	}
+
 	if celem := c.items; celem != nil {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking if all items match a spec")
@@ -51,7 +67,8 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 		// if this is set, then all items must fulfill this.
 		// additional items are ignored
 		for i := 0; i < l; i++ {
-			if err := celem.Validate(rv.Index(i).Interface()); err != nil {
+			iv := rv.Index(i).Interface()
+			if err := celem.Validate(iv); err != nil {
 				return err
 			}
 		}
@@ -66,10 +83,8 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 			if pdebug.Enabled {
 				pdebug.Printf("Checking positional item at '%d'", i)
 			}
-			ev := rv.Index(i)
-			// We don't do defaults and stuff here, because it's virtually
-			// impossible to tell if this is "uninitialized"
-			if err := cpos.Validate(ev.Interface()); err != nil {
+			iv := rv.Index(i).Interface()
+			if err := cpos.Validate(iv); err != nil {
 				return err
 			}
 		}
@@ -81,7 +96,8 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 				return errors.New("additional elements found in array")
 			}
 			for i := lp - 1; i < l; i++ {
-				if err := cadd.Validate(rv.Index(i).Interface()); err != nil {
+				iv := rv.Index(i).Interface()
+				if err := cadd.Validate(iv); err != nil {
 					return err
 				}
 			}
@@ -116,6 +132,9 @@ func (c *ArrayConstraint) PositionalItems(ac []Constraint) *ArrayConstraint {
 }
 
 func (c *ArrayConstraint) UniqueItems(b bool) *ArrayConstraint {
+	if pdebug.Enabled {
+		pdebug.Printf("Setting uniqueItems = %t", b)
+	}
 	c.uniqueItems = b
 	return c
 }
