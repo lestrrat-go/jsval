@@ -10,6 +10,7 @@ import (
 func Array() *ArrayConstraint {
 	return &ArrayConstraint{
 		additionalItems: EmptyConstraint,
+		maxItems: -1,
 		minItems: -1,
 	}
 }
@@ -34,6 +35,15 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 	}
 
 	l := rv.Len()
+
+	if mi := c.minItems; mi > -1 && l < mi {
+		return errors.New("fewer items than minItems")
+	}
+
+	if mi := c.maxItems; mi > -1 && l > mi {
+		return errors.New("more items than maxItems")
+	}
+
 	if celem := c.items; celem != nil {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking if all items match a spec")
