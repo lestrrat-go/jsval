@@ -34,6 +34,12 @@ func (nc *NumberConstraint) Minimum(n float64) *NumberConstraint {
 	return nc
 }
 
+func (nc *NumberConstraint) MultipleOf(n float64) *NumberConstraint {
+	nc.applyMultipleOf = true
+	nc.multipleOf = n
+	return nc
+}
+
 func (nc *NumberConstraint) ExclusiveMinimum(b bool) *NumberConstraint {
 	nc.exclusiveMinimum = b
 	return nc
@@ -84,6 +90,18 @@ func (nc *NumberConstraint) Validate(v interface{}) (err error) {
 		}
 		if nc.maximum < f {
 			return errors.New("numeric value greater than maximum")
+		}
+	}
+
+	if nc.applyMultipleOf {
+		if pdebug.Enabled {
+			pdebug.Printf("Checking MultipleOf (%f)", nc.multipleOf)
+		}
+
+		if nc.multipleOf != 0 {
+	    if math.Mod(f, nc.multipleOf) != 0 {
+				return errors.New("numeric value is fails multipleOf validation")
+			}
 		}
 	}
 

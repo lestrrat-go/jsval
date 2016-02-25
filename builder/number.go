@@ -28,6 +28,10 @@ func buildIntegerConstraint(ctx *buildctx, nc *jsval.IntegerConstraint, s *schem
 		}
 	}
 
+	if s.MultipleOf.Initialized {
+		nc.MultipleOf(s.MultipleOf.Val)
+	}
+
 	if lst := s.Enum; len(lst) > 0 {
 		nc.Enum(lst)
 	}
@@ -38,6 +42,7 @@ func buildIntegerConstraint(ctx *buildctx, nc *jsval.IntegerConstraint, s *schem
 
 	return nil
 }
+
 func buildNumberConstraint(ctx *buildctx, nc *jsval.NumberConstraint, s *schema.Schema) error {
 	if len(s.Type) > 0 {
 		if !s.Type.Contains(schema.NumberType) {
@@ -57,6 +62,10 @@ func buildNumberConstraint(ctx *buildctx, nc *jsval.NumberConstraint, s *schema.
 		if s.ExclusiveMaximum.Initialized {
 			nc.ExclusiveMaximum(s.ExclusiveMaximum.Val)
 		}
+	}
+
+	if s.MultipleOf.Initialized {
+		nc.MultipleOf(s.MultipleOf.Val)
 	}
 
 	if lst := s.Enum; len(lst) > 0 {

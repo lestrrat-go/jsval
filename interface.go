@@ -61,8 +61,10 @@ type NumberConstraint struct {
 	defaultValue
 	applyMinimum     bool
 	applyMaximum     bool
+	applyMultipleOf  bool
 	minimum          float64
 	maximum          float64
+	multipleOf       float64
 	exclusiveMinimum bool
 	exclusiveMaximum bool
 	enums            *EnumConstraint
