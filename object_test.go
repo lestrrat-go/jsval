@@ -1,10 +1,11 @@
-package jsval
+package jsval_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/lestrrat/go-jsschema"
+	"github.com/lestrrat/go-jsval/builder"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,8 +37,9 @@ func TestObject(t *testing.T) {
 		return
 	}
 
-	v := New()
-	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
+	b := builder.New()
+	v, err := b.Build(s)
+	if !assert.NoError(t, err, "Builder.Build should succeed") {
 		return
 	}
 
@@ -86,8 +88,9 @@ func TestObjectDependency(t *testing.T) {
 		return
 	}
 
-	v := New()
-	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
+	b := builder.New()
+	v, err := b.Build(s)
+	if !assert.NoError(t, err, "Builder.Build should succeed") {
 		return
 	}
 
@@ -138,8 +141,9 @@ func TestObjectSchemaDependency(t *testing.T) {
 		return
 	}
 
-	v := New()
-	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
+	b := builder.New()
+	v, err := b.Build(s)
+	if !assert.NoError(t, err, "Builder.Build should succeed") {
 		return
 	}
 

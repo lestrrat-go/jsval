@@ -71,7 +71,7 @@ func JSValFoo() *jsval.JSVal {
 			).
 			AddProp(
 				`enum`,
-				jsval.Array().MinItems(1).MaxItems(0).UniqueItems(),
+				jsval.Array().MinItems(1).MaxItems(0).UniqueItems(true),
 			).
 			AddProp(
 				`exclusiveMaximum`,
@@ -172,15 +172,15 @@ func JSValFoo() *jsval.JSVal {
 						jsval.Reference(V).RefersTo(`#/definitions/simpleTypes`),
 					).
 					Add(
-						jsval.Array().MinItems(1).MaxItems(0).UniqueItems(),
+						jsval.Array().MinItems(1).MaxItems(0).UniqueItems(true),
 					),
 			).
 			AddProp(
 				`uniqueItems`,
 				jsval.Boolean().Default(false),
 			).
-			PropDependency("exclusiveMinimum", "minimum").
-			PropDependency("exclusiveMaximum", "maximum"),
+			PropDependency("exclusiveMaximum", "maximum").
+			PropDependency("exclusiveMinimum", "minimum"),
 	)
 
 	V.SetReference(
@@ -211,7 +211,7 @@ func JSValFoo() *jsval.JSVal {
 	)
 	V.SetReference(
 		`#/definitions/stringArray`,
-		jsval.Array().MinItems(1).MaxItems(0).UniqueItems(),
+		jsval.Array().MinItems(1).MaxItems(0).UniqueItems(true),
 	)
 	return V
 }

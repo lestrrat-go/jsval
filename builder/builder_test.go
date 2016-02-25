@@ -1,4 +1,4 @@
-package jsval
+package builder
 
 import (
 	"strings"

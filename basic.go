@@ -1,7 +1,5 @@
 package jsval
 
-import "github.com/lestrrat/go-jsschema"
-
 func (dv defaultValue) HasDefault() bool {
 	return dv.initialized
 }
@@ -11,10 +9,6 @@ func (dv defaultValue) DefaultValue() interface{} {
 }
 
 func (nc nilConstraint) Validate(_ interface{}) error {
-	return nil
-}
-
-func (nc nilConstraint) buildFromSchema(_ *buildctx, _ *schema.Schema) error {
 	return nil
 }
 

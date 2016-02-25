@@ -3,19 +3,11 @@ package jsval
 import (
 	"errors"
 
-	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-pdebug"
 )
 
 func Enum(v ...interface{}) *EnumConstraint {
 	return &EnumConstraint{enums: v}
-}
-
-func (c *EnumConstraint) buildFromJSON(ctx *buildctx, s *schema.Schema) error {
-	l := make([]interface{}, len(s.Enum))
-	copy(l, s.Enum)
-	c.enums = l
-	return nil
 }
 
 func (c *EnumConstraint) Enum(v []interface{}) *EnumConstraint {
