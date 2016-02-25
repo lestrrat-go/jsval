@@ -56,7 +56,7 @@ func buildArrayConstraint(ctx *buildctx, c *jsval.ArrayConstraint, s *schema.Sch
 				if pdebug.Enabled {
 					pdebug.Printf("Additional items will be allowed freely")
 				}
-				c.AdditionalItems(jsval.NilConstraint)
+				c.AdditionalItems(jsval.EmptyConstraint)
 			}
 		}
 	}

@@ -138,7 +138,7 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (jsval.Constraint, error) 
 		if pdebug.Enabled {
 			pdebug.Printf("Not constraint")
 		}
-		ct.Add(jsval.NilConstraint)
+		ct.Add(jsval.EmptyConstraint)
 	case len(s.AllOf) > 0:
 		if pdebug.Enabled {
 			pdebug.Printf("AllOf constraint")
@@ -169,7 +169,7 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (jsval.Constraint, error) 
 		if pdebug.Enabled {
 			pdebug.Printf("OneOf constraint")
 		}
-		ct.Add(jsval.NilConstraint)
+		ct.Add(jsval.EmptyConstraint)
 	}
 
 	var sts schema.PrimitiveTypes
@@ -225,6 +225,8 @@ func buildFromSchema(ctx *buildctx, s *schema.Schema) (jsval.Constraint, error) 
 					return nil, err
 				}
 				c = oc
+			case schema.NullType:
+				c = jsval.NullConstraint
 			default:
 				return nil, errors.New("unknown type: " + st.String())
 			}

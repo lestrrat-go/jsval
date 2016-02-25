@@ -7,7 +7,7 @@ func JSValFoo() *jsval.JSVal {
 	V.SetRoot(
 		jsval.Object().
 			AdditionalProperties(
-				jsval.NilConstraint,
+				jsval.EmptyConstraint,
 			).
 			AddProp(
 				`$schema`,
@@ -43,7 +43,7 @@ func JSValFoo() *jsval.JSVal {
 			).
 			AddProp(
 				`default`,
-				jsval.NilConstraint,
+				jsval.EmptyConstraint,
 			).
 			AddProp(
 				`definitions`,
@@ -198,7 +198,7 @@ func JSValFoo() *jsval.JSVal {
 				jsval.Reference(V).RefersTo(`#/definitions/positiveInteger`),
 			).
 			Add(
-				jsval.NilConstraint,
+				jsval.EmptyConstraint,
 			),
 	)
 	V.SetReference(

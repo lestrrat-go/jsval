@@ -33,7 +33,7 @@ func buildObjectConstraint(ctx *buildctx, c *jsval.ObjectConstraint, s *schema.S
 			}
 			c.AdditionalProperties(aitem)
 		} else {
-			c.AdditionalProperties(jsval.NilConstraint)
+			c.AdditionalProperties(jsval.EmptyConstraint)
 		}
 	}
 

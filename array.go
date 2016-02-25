@@ -9,7 +9,7 @@ import (
 
 func Array() *ArrayConstraint {
 	return &ArrayConstraint{
-		additionalItems: NilConstraint,
+		additionalItems: EmptyConstraint,
 		minItems: -1,
 	}
 }

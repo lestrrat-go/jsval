@@ -28,9 +28,16 @@ type Constraint interface {
 	Validate(interface{}) error
 }
 
-type nilConstraint struct{}
+type emptyConstraint struct{}
 
-var NilConstraint = nilConstraint{}
+// EmptyConstraint is a constraint that returns true for any value
+var EmptyConstraint = emptyConstraint{}
+
+type nullConstraint struct{}
+
+// NullConstraint is a constraint that only matches the JSON
+// "null" value, or "nil" in golang
+var NullConstraint = nullConstraint{}
 
 type defaultValue struct {
 	initialized bool
@@ -91,7 +98,7 @@ type ObjectConstraint struct {
 }
 
 type EnumConstraint struct {
-	nilConstraint
+	emptyConstraint
 	enums []interface{}
 }
 
@@ -101,7 +108,7 @@ type CombinedConstraint interface {
 }
 
 type comboconstraint struct {
-	nilConstraint
+	emptyConstraint
 	constraints []Constraint
 }
 

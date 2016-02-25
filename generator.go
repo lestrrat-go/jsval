@@ -52,8 +52,8 @@ func (ctx *genctx) Indent() func() {
 	}
 }
 
-func generateNilCode(ctx *genctx, out io.Writer, c nilConstraint) error {
-	fmt.Fprintf(out, "%s%s.NilConstraint", ctx.Prefix(), ctx.pkgname)
+func generateNilCode(ctx *genctx, out io.Writer, c emptyConstraint) error {
+	fmt.Fprintf(out, "%s%s.EmptyConstraint", ctx.Prefix(), ctx.pkgname)
 	return nil
 }
 func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
@@ -99,8 +99,8 @@ func generateCode(ctx *genctx, out io.Writer, c Validator) error {
 	buf := &bytes.Buffer{}
 
 	switch c.(type) {
-	case nilConstraint:
-		generateNilCode(ctx, buf, c.(nilConstraint))
+	case emptyConstraint:
+		generateNilCode(ctx, buf, c.(emptyConstraint))
 	case *JSVal:
 		generateValidatorCode(ctx, buf, c.(*JSVal))
 	case *AnyConstraint:
@@ -159,7 +159,7 @@ func generateAnyCode(ctx *genctx, out io.Writer, c *AnyConstraint) error {
 
 func generateAllCode(ctx *genctx, out io.Writer, c *AllConstraint) error {
 	if len(c.constraints) == 0 {
-		return generateNilCode(ctx, out, NilConstraint)
+		return generateNilCode(ctx, out, EmptyConstraint)
 	}
 
 	p := ctx.Prefix()
