@@ -71,7 +71,6 @@ against the `positiveInteger` schema:
 # TODO
 
 * More complete coverage of JSON Schema. Many validation statements are still not implmented (Please file issues if you find any!)
-* Work with schemas that does not present a "type" field.
 
 # References
 
