@@ -96,6 +96,8 @@ type ObjectConstraint struct {
 	propdeps             map[string][]string
 	reqlock              sync.Mutex
 	required             map[string]struct{}
+	maxProperties        int
+	minProperties        int
 	schemadeps           map[string]Constraint
 	FieldNamesFromStruct func(reflect.Value) []string
 }

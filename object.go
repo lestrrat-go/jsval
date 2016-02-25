@@ -11,6 +11,8 @@ import (
 func Object() *ObjectConstraint {
 	return &ObjectConstraint{
 		additionalProperties: nil,
+		minProperties: -1,
+		maxProperties: -1,
 		patternProperties:    make(map[*regexp.Regexp]Constraint),
 		properties:           make(map[string]Constraint),
 		propdeps:             make(map[string][]string),
@@ -35,6 +37,16 @@ func (o *ObjectConstraint) IsPropRequired(s string) bool {
 
 	_, ok := o.required[s]
 	return ok
+}
+
+func (o *ObjectConstraint) MinProperties(n int) *ObjectConstraint {
+	o.minProperties = n
+	return o
+}
+
+func (o *ObjectConstraint) MaxProperties(n int) *ObjectConstraint {
+	o.maxProperties = n
+	return o
 }
 
 func (o *ObjectConstraint) AdditionalProperties(c Constraint) *ObjectConstraint {
@@ -137,6 +149,14 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 		}
 	default:
 		return errors.New("value is not map/object")
+	}
+
+	lf := len(fields)
+	if o.minProperties > -1 && lf < o.minProperties {
+		return errors.New("fewer properties than minProperties")
+	}
+	if o.maxProperties > -1 && lf > o.maxProperties {
+		return errors.New("more properties than maxProperties")
 	}
 
 	// Find the list of field names that were passed to us

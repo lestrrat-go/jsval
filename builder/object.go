@@ -16,6 +16,14 @@ func buildObjectConstraint(ctx *buildctx, c *jsval.ObjectConstraint, s *schema.S
 		c.Required(l...)
 	}
 
+	if s.MinProperties.Initialized {
+		c.MinProperties(s.MinProperties.Val)
+	}
+
+	if s.MaxProperties.Initialized {
+		c.MaxProperties(s.MaxProperties.Val)
+	}
+
 	for pname, pdef := range s.Properties {
 		cprop, err := buildFromSchema(ctx, pdef)
 		if err != nil {
