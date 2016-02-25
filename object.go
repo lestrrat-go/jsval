@@ -163,14 +163,13 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 
 			// At this point we know that the property was not present
 			// and that this field was indeed not required.
-			if !c.HasDefault() {
-				// We have no default. we can safely continue
-				continue
+			if c.HasDefault() {
+				// We have default
+				dv := c.DefaultValue()
+				pval = reflect.ValueOf(dv)
 			}
 
-			// We have default
-			dv := c.DefaultValue()
-			pval = reflect.ValueOf(dv)
+			continue
 		}
 
 		// delete from remaining props
@@ -199,6 +198,9 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 
 	for pname := range pseen {
 		if deps := o.GetPropDependencies(pname); len(deps) > 0 {
+			if pdebug.Enabled {
+				pdebug.Printf("Property '%s' has dependencies", pname)
+			}
 			for _, dep := range deps {
 				if _, ok := pseen[dep]; !ok {
 					return errors.New("required dependency '" + dep + "' is mising")
