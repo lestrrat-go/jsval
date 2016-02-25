@@ -112,4 +112,66 @@ func TestObjectDependency(t *testing.T) {
 	}
 }
 
+func TestObjectSchemaDependency(t *testing.T) {
+	const src =`{
+  "type": "object",
+
+  "properties": {
+    "name": { "type": "string" },
+    "credit_card": { "type": "string", "pattern": "^[0-9]+$" }
+  },
+
+  "required": ["name"],
+
+  "dependencies": {
+    "credit_card": {
+      "properties": {
+        "billing_address": { "type": "string" }
+      },
+      "required": ["billing_address"]
+    }
+  }
+}`
+
+	s, err := schema.Read(strings.NewReader(src))
+	if !assert.NoError(t, err, "reading schema should succeed") {
+		return
+	}
+
+	v := New()
+	if !assert.NoError(t, v.Build(s), "Validator.Build should succeed") {
+		return
+	}
+
+  data := []interface{}{
+    map[string]interface{}{
+			"name": "John Doe",
+		  "credit_card": "5555555555555555",
+		},
+  }
+  for _, input := range data {
+    t.Logf("Testing %#v (should FAIL)", input)
+    if !assert.Error(t, v.Validate(input), "validation fails") {
+      return
+    }
+  }
+
+	data = []interface{}{
+		map[string]interface{}{
+		  "name": "John Doe",
+		  "credit_card": "5555555555555555",
+		  "billing_address": "555 Debtor's Lane",
+		},
+		map[string]interface{}{
+		  "name": "John Doe",
+		  "billing_address": "555 Debtor's Lane",
+		},
+	}
+	for _, input := range data {
+		t.Logf("Testing %#v (should PASS)", input)
+		if !assert.NoError(t, v.Validate(input), "validation passes") {
+			return
+		}
+	}
+}
 

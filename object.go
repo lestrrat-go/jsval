@@ -42,12 +42,17 @@ func (c *ObjectConstraint) buildFromSchema(ctx *buildctx, s *schema.Schema) erro
 	for from, to := range s.Dependencies.Names {
 		c.PropDependency(from, to...)
 	}
-	/* TODO: unimplemented */
-	/*
-		for from, to := range s.Dependencies.Schemas {
-			c.SchemaDependency(from, to)
+
+	if depschemas := s.Dependencies.Schemas; len(depschemas) > 0 {
+		for pname, depschema := range depschemas {
+			depc, err := buildFromSchema(ctx, depschema)
+			if err != nil {
+				return err
+			}
+
+			c.SchemaDependency(pname, depc)
 		}
-	*/
+	}
 
 	return nil
 }
@@ -58,6 +63,7 @@ func Object() *ObjectConstraint {
 		properties:           make(map[string]Constraint),
 		propdeps:             make(map[string][]string),
 		required:             make(map[string]struct{}),
+		schemadeps:           make(map[string]Constraint),
 	}
 }
 
@@ -102,16 +108,13 @@ func (o *ObjectConstraint) PropDependency(from string, to ...string) *ObjectCons
 	return o
 }
 
-/* TODO: Properly implement this */
-/*
-func (o *ObjectConstraint) SchemaDependency(from string, s *schema.Schema) *ObjectConstraint {
+func (o *ObjectConstraint) SchemaDependency(from string, c Constraint) *ObjectConstraint {
 	o.deplock.Lock()
 	defer o.deplock.Unlock()
 
-	o.schemadeps[from] = s
+	o.schemadeps[from] = c
 	return o
 }
-*/
 
 func (o *ObjectConstraint) GetPropDependencies(from string) []string {
 	o.deplock.Lock()
@@ -123,6 +126,18 @@ func (o *ObjectConstraint) GetPropDependencies(from string) []string {
 	}
 
 	return l
+}
+
+func (o *ObjectConstraint) GetSchemaDependency(from string) Constraint {
+	o.deplock.Lock()
+	defer o.deplock.Unlock()
+
+	c, ok := o.schemadeps[from]
+	if !ok {
+		return nil
+	}
+
+	return c
 }
 
 func (o *ObjectConstraint) Validate(v interface{}) (err error) {
@@ -244,12 +259,11 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 			continue
 		}
 
-		/* Not implemented yet. do we want to? */
-		/*
-			if depschema := o.GetSchemaDependency(pname); depschema != nil {
-
+		if depc := o.GetSchemaDependency(pname); depc != nil {
+			if err := depc.Validate(v); err != nil {
+				return err
 			}
-		*/
+		}
 	}
 
 	return nil
