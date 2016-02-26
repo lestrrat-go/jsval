@@ -48,19 +48,29 @@ func (nc nullConstraint) Validate(v interface{}) error {
 	return errors.New("value is not null")
 }
 
+// Not creates a new NotConstraint. You must pass in the
+// child constraint to be run
 func Not(c Constraint) *NotConstraint {
 	return &NotConstraint{child: c}
 }
 
+// HasDefault is a no op for this constraint
 func (nc NotConstraint) HasDefault() bool {
 		return false
 }
 
+// DefaultValue is a no op for this constraint
 func (nc NotConstraint) DefaultValue() interface{} {
 	return nil
 }
 
+// Validate runs the validation, and returns an error unless
+// the child constraint fails
 func (nc NotConstraint) Validate(v interface{}) error {
+	if nc.child == nil {
+		return errors.New("'not' constraint does not have a child constraint")
+	}
+
 	if err := nc.child.Validate(v); err == nil {
 		return errors.New("'not' validation failed")
 	}
