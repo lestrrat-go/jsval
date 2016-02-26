@@ -11,8 +11,8 @@ import (
 func Object() *ObjectConstraint {
 	return &ObjectConstraint{
 		additionalProperties: nil,
-		minProperties: -1,
-		maxProperties: -1,
+		minProperties:        -1,
+		maxProperties:        -1,
 		patternProperties:    make(map[*regexp.Regexp]Constraint),
 		properties:           make(map[string]Constraint),
 		propdeps:             make(map[string][]string),
@@ -112,6 +112,58 @@ func (o *ObjectConstraint) GetSchemaDependency(from string) Constraint {
 	return c
 }
 
+// getProps return all of the property names for this object.
+// XXX Map keys can be something other than strings, but
+// we can't really allow it?
+func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
+	var keys []string
+	switch rv.Kind() {
+	case reflect.Map:
+		vk := rv.MapKeys()
+		keys = make([]string, len(vk))
+		for i, v := range vk {
+			if v.Kind() != reflect.String {
+				return nil, errors.New("panic: can only handle maps with string keys")
+			}
+			keys[i] = v.String()
+		}
+	case reflect.Struct:
+		fetcher := o.FieldNamesFromStruct
+		if fetcher == nil {
+			fetcher = DefaultFieldNamesFromStruct
+		}
+		if keys = fetcher(rv); keys == nil {
+			// Can't happen, because we check for reflect.Struct,
+			// but for completeness
+			return nil, errors.New("panic: can only handle structs")
+		}
+	default:
+		return nil, errors.New("cannot get property names from this value")
+	}
+
+	return keys, nil
+}
+
+func (o *ObjectConstraint) getProp(rv reflect.Value, pname string) reflect.Value {
+	switch rv.Kind() {
+	case reflect.Map:
+		pv := reflect.ValueOf(pname)
+		return rv.MapIndex(pv)
+	case reflect.Struct:
+		fetcher := o.FieldIndexFromName
+		if fetcher == nil {
+			fetcher = DefaultFieldIndexFromName
+		}
+		i := fetcher(rv, pname)
+		if i < 0 {
+			return zeroval
+		}
+		return rv.Field(i)
+	default:
+		return zeroval
+	}
+}
+
 func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START ObjectConstraint.Validate")
@@ -130,25 +182,9 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 		rv = rv.Elem()
 	}
 
-	var fields []string
-	switch rv.Kind() {
-	case reflect.Struct:
-		if pdebug.Enabled {
-			pdebug.Printf("Validation target is a struct")
-		}
-		fields = o.FieldNamesFromStruct(rv)
-	case reflect.Map:
-		if pdebug.Enabled {
-			pdebug.Printf("Validation target is a map")
-		}
-		if rv.Type().Key().Kind() != reflect.String {
-			return errors.New("only maps with string keys can be handled")
-		}
-		for _, v := range rv.MapKeys() {
-			fields = append(fields, v.String())
-		}
-	default:
-		return errors.New("value is not map/object")
+	fields, err := o.getPropNames(rv)
+	if err != nil {
+		return err
 	}
 
 	lf := len(fields)
@@ -182,7 +218,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 			pdebug.Printf("Validating property '%s'", pname)
 		}
 
-		pval := rv.MapIndex(reflect.ValueOf(pname))
+		pval := o.getProp(rv, pname)
 		if pval == zeroval {
 			if pdebug.Enabled {
 				pdebug.Printf("Property '%s' does not exist", pname)
@@ -219,7 +255,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 			}
 			// No need to check if this pname exists, as we're taking
 			// this from "premain"
-			pval := rv.MapIndex(reflect.ValueOf(pname))
+			pval := o.getProp(rv, pname)
 
 			delete(premain, pname)
 			pseen[pname] = struct{}{}
@@ -236,7 +272,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 		}
 
 		for pname := range premain {
-			pval := rv.MapIndex(reflect.ValueOf(pname))
+			pval := o.getProp(rv, pname)
 			if err := c.Validate(pval.Interface()); err != nil {
 				return errors.New("object property for '" + pname + "' validation failed: " + err.Error())
 			}

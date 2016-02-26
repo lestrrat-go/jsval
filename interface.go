@@ -103,6 +103,8 @@ type ArrayConstraint struct {
 // resolve JSON names to field names when a struct is passed for
 // validation.
 var DefaultFieldNamesFromStruct = structinfo.JSONFieldsFromStruct
+var DefaultFieldIndexFromName = structinfo.StructFieldFromJSONName
+type FieldIndexFromNameFunc func(reflect.Value, string) int
 
 // ObjectConstraint implements a constraint to match against
 // various aspects of a Map-like structure.
@@ -119,6 +121,19 @@ type ObjectConstraint struct {
 	maxProperties        int
 	minProperties        int
 	schemadeps           map[string]Constraint
+
+	// FieldIndexFromName takes a struct wrapped in reflect.Value, and a
+	// field name -- in JSON format (i.e. what you specified in your
+	// JSON struct tags, or the actual field name). It returns the
+	// index to pass to `Value.Field(i)`. If you do not specify one,
+	// DefaultFieldIndexFromName will be used.
+	FieldIndexFromName func(reflect.Value, string) int
+
+	// FieldNamesFromStruct takes a struct wrapped in reflect.Value, and
+	// returns the name of all public fields. Note that the returned
+	// names will be JSON names, which may not necessarily be the same
+	// as the field name. If you do not specify one, DefaultFieldNamesFromStruct
+	// will be used
 	FieldNamesFromStruct func(reflect.Value) []string
 }
 
