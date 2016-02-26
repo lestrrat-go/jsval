@@ -6,24 +6,32 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+// New creates a new JSVal instance.
 func New() *JSVal {
 	return &JSVal{
 		refs: make(map[string]Constraint),
 	}
 }
 
+// Validates validates the input, and return an error
+// if any of the validations fail
 func (v *JSVal) Validate(x interface{}) error {
 	return v.root.Validate(x)
 }
 
+// SetRoot sets the root Constraint object.
 func (v *JSVal) SetRoot(c Constraint) {
 	v.root = c
 }
 
+// Root returns the root Constraint object.
 func (v *JSVal) Root() Constraint {
 	return v.root
 }
 
+// GetReference returns the Constraint object pointed at by `ref`.
+// It will return an error if a matching constraint has not already
+// been registered
 func (v *JSVal) GetReference(ref string) (Constraint, error) {
 	v.reflock.Lock()
 	defer v.reflock.Unlock()
@@ -35,6 +43,7 @@ func (v *JSVal) GetReference(ref string) (Constraint, error) {
 	return c, nil
 }
 
+// SetReference sets a Constraint object to be associated with `ref`.
 func (v *JSVal) SetReference(ref string, c Constraint) {
 	if pdebug.Enabled {
 		pdebug.Printf("JSVal.SetReference %s", ref)

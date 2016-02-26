@@ -10,7 +10,7 @@ func (c *comboconstraint) Constraints() []Constraint {
 	return c.constraints
 }
 
-func reduceCombined(cc CombinedConstraint) Constraint {
+func reduceCombined(cc interface{ Constraint; Constraints() []Constraint }) Constraint {
 	l := cc.Constraints()
 	if len(l) == 1 {
 		return l[0]
