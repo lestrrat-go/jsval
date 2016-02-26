@@ -1,10 +1,9 @@
-package jsval
-
 // Package jsval implements an input validator, based on JSON Schema.
 // The main purpose is to validate JSON Schemas (see
 // https://github.com/lestrrat/go-jsschema), and to automatically
 // generate validators from schemas, but jsval can be used independently
 // of JSON Schema.
+package jsval
 
 import (
 	"errors"
