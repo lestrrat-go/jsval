@@ -12,19 +12,21 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+// Default sets the default value for this constraint.
 func (sc *StringConstraint) Default(v interface{}) *StringConstraint {
 	sc.defaultValue.initialized = true
 	sc.defaultValue.value = v
 	return sc
 }
 
+// Validate runs the validation against the incoming value.
 // Note that StringConstraint does not apply default values to the
 // incoming string value, because the Zero value for string ("")
 // can be a perfectly reasonable value.
 //
 // The caller is the only person who can determine if a string
 // value is "unavailable"
-func (s *StringConstraint) Validate(v interface{}) (err error) {
+func (sc *StringConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START StringConstraint.Validate")
 		defer func() {
@@ -49,25 +51,25 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 
 	str := rv.String()
 	ls := len(str)
-	if s.maxLength > 0 {
+	if sc.maxLength > 0 {
 		if pdebug.Enabled {
-			pdebug.Printf("Checking MaxLength (%d)", s.maxLength)
+			pdebug.Printf("Checking MaxLength (%d)", sc.maxLength)
 		}
-		if ls > s.maxLength {
+		if ls > sc.maxLength {
 			return errors.New("string longer than maxLength")
 		}
 	}
 
-	if s.minLength > -1 {
+	if sc.minLength > -1 {
 		if pdebug.Enabled {
-			pdebug.Printf("Checking MinLength (%d)", s.minLength)
+			pdebug.Printf("Checking MinLength (%d)", sc.minLength)
 		}
-		if ls < s.minLength {
+		if ls < sc.minLength {
 			return errors.New("string shorter than minLength")
 		}
 	}
 
-	switch s.format{
+	switch sc.format{
 	case "datetime":
 		if _, err = time.Parse(time.RFC3339, str); err != nil {
 			return errors.New("invalid datetime")
@@ -110,7 +112,7 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 		}
 	}
 
-	if rx := s.regexp; rx != nil {
+	if rx := sc.regexp; rx != nil {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking Regexp")
 		}
@@ -119,7 +121,7 @@ func (s *StringConstraint) Validate(v interface{}) (err error) {
 		}
 	}
 
-	if enum := s.enums; enum != nil {
+	if enum := sc.enums; enum != nil {
 		if err := enum.Validate(str); err != nil {
 			return err
 		}
@@ -177,6 +179,7 @@ func isDomainName(s string) bool {
 	return ok
 }
 
+// Enum specifies the enumeration of the possible values
 func (sc *StringConstraint) Enum(l []interface{}) *StringConstraint {
 	if sc.enums == nil {
 		sc.enums = Enum()
@@ -185,30 +188,39 @@ func (sc *StringConstraint) Enum(l []interface{}) *StringConstraint {
 	return sc
 }
 
+// MaxLength specifies the maximum length the passed value can have
 func (sc *StringConstraint) MaxLength(l int) *StringConstraint {
 	sc.maxLength = l
 	return sc
 }
 
+// MinLength specifies the minimum length the passed value must have
 func (sc *StringConstraint) MinLength(l int) *StringConstraint {
 	sc.minLength = l
 	return sc
 }
 
+// RegexpString is the same as Regexp method, except this one
+// takes a string and compiles it.
 func (sc *StringConstraint) RegexpString(pat string) *StringConstraint {
 	return sc.Regexp(regexp.MustCompile(pat))
 }
 
+// Regexp specifies the `*regexp.Regexp` object that passed value
+// must conform to
 func (sc *StringConstraint) Regexp(rx *regexp.Regexp) *StringConstraint {
 	sc.regexp = rx
 	return sc
 }
 
+// Format specifies the format that passed value must conform to
 func (sc *StringConstraint) Format(f string) *StringConstraint {
 	sc.format = f
 	return sc
 }
 
+// String creates a new StringConstraint. It unfortunately overlaps
+// the `Stringer` interface :/
 func String() *StringConstraint {
 	return &StringConstraint{
 		maxLength: -1,
