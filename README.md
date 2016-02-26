@@ -129,9 +129,10 @@ against the `positiveInteger` schema:
 
 # References
 
-| Name                                                     | Notes                         |
-|:--------------------------------------------------------:|:------------------------------|
-| [go-jsschema](https://github.com/lestrrat/go-jsschema)   | JSON Schema implementation    |
-| [go-jsref](https://github.com/lestrrat/go-jsref)         | JSON Reference implementation |
-| [go-jspointer](https://github.com/lestrrat/go-jspointer) | JSON Pointer implementations  |
+| Name                                                     | Notes                            |
+|:--------------------------------------------------------:|:---------------------------------|
+| [go-jsschema](https://github.com/lestrrat/go-jsschema)   | JSON Schema implementation       |
+| [go-jshschema](https://github.com/lestrrat/go-jshschema) | JSON Hyper Schema implementation |
+| [go-jsref](https://github.com/lestrrat/go-jsref)         | JSON Reference implementation    |
+| [go-jspointer](https://github.com/lestrrat/go-jspointer) | JSON Pointer implementations     |
 
