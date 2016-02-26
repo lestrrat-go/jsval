@@ -6,15 +6,18 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+// Enum creates a new EnumConstraint
 func Enum(v ...interface{}) *EnumConstraint {
 	return &EnumConstraint{enums: v}
 }
 
+// Enum method sets the possible enumerations
 func (c *EnumConstraint) Enum(v []interface{}) *EnumConstraint {
 	c.enums = v
 	return c
 }
 
+// Validate validates the value against the list of enumerations
 func (c *EnumConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START EnumConstraint.Validate")

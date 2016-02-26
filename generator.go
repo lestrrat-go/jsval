@@ -10,12 +10,16 @@ import (
 	"strings"
 )
 
+// Generator is responsible for generating Go code that
+// sets up a validator
 type Generator struct{}
 
+// NewGenerator creates a new Generator
 func NewGenerator() *Generator {
 	return &Generator{}
 }
 
+// Process takes a validator and prints out Go code to out.
 func (g *Generator) Process(out io.Writer, v *JSVal, name string) error {
 	ctx := genctx{
 		pkgname: "jsval",
