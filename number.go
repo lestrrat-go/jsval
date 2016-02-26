@@ -8,6 +8,7 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+// Enum specifies the values that this constraint can have
 func (nc *NumberConstraint) Enum(l []interface{}) *NumberConstraint {
 	if nc.enums == nil {
 		nc.enums = Enum()
@@ -16,40 +17,51 @@ func (nc *NumberConstraint) Enum(l []interface{}) *NumberConstraint {
 	return nc
 }
 
+// Default specifies the default value for the given value
 func (nc *NumberConstraint) Default(v interface{}) *NumberConstraint {
 	nc.defaultValue.initialized = true
 	nc.defaultValue.value = v
 	return nc
 }
 
+// Maximum sepcifies the maximum value that the constraint can allow
 func (nc *NumberConstraint) Maximum(n float64) *NumberConstraint {
 	nc.applyMaximum = true
 	nc.maximum = n
 	return nc
 }
 
+// Minimum sepcifies the minimum value that the constraint can allow
 func (nc *NumberConstraint) Minimum(n float64) *NumberConstraint {
 	nc.applyMinimum = true
 	nc.minimum = n
 	return nc
 }
 
+// MultipleOf specifies the number that the given value must be
+// divisible by. That is, the constraint will return an error unless
+// the given value satisfies `math.Mod(v, n) == 0`
 func (nc *NumberConstraint) MultipleOf(n float64) *NumberConstraint {
 	nc.applyMultipleOf = true
 	nc.multipleOf = n
 	return nc
 }
 
+// ExclusiveMinimum specifies if the minimum value should be considered
+// a valid value
 func (nc *NumberConstraint) ExclusiveMinimum(b bool) *NumberConstraint {
 	nc.exclusiveMinimum = b
 	return nc
 }
 
+// ExclusiveMaximum specifies if the maximum value should be considered
+// a valid value
 func (nc *NumberConstraint) ExclusiveMaximum(b bool) *NumberConstraint {
 	nc.exclusiveMaximum = b
 	return nc
 }
 
+// Validate validates the value against this constraint
 func (nc *NumberConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START NumberConstraint.Validate")
@@ -79,8 +91,15 @@ func (nc *NumberConstraint) Validate(v interface{}) (err error) {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking Minimum (%f)", nc.minimum)
 		}
-		if nc.minimum > f {
-			return errors.New("numeric value less than minimum")
+
+		if nc.exclusiveMinimum {
+			if nc.minimum >= f {
+				return errors.New("numeric value is less than the minimum (exclusive minimum)")
+			}
+		} else {
+			if nc.minimum > f {
+				return errors.New("numeric value is less than the minimum")
+			}
 		}
 	}
 
@@ -88,8 +107,14 @@ func (nc *NumberConstraint) Validate(v interface{}) (err error) {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking Maximum (%f)", nc.maximum)
 		}
-		if nc.maximum < f {
-			return errors.New("numeric value greater than maximum")
+		if nc.exclusiveMaximum {
+			if nc.maximum <= f {
+				return errors.New("numeric value is greater than maximum (exclusive maximum)")
+			}
+		} else {
+			if nc.maximum < f {
+				return errors.New("numeric value is greater than maximum")
+			}
 		}
 	}
 
@@ -114,6 +139,7 @@ func (nc *NumberConstraint) Validate(v interface{}) (err error) {
 	return nil
 }
 
+// Number creates a new NumberConstraint
 func Number() *NumberConstraint {
 	return &NumberConstraint{
 		applyMinimum: false,
@@ -121,6 +147,7 @@ func Number() *NumberConstraint {
 	}
 }
 
+// Integer creates a new IntegerrConstraint
 func Integer() *IntegerConstraint {
 	c := &IntegerConstraint{}
 	c.applyMinimum = false
@@ -128,23 +155,29 @@ func Integer() *IntegerConstraint {
 	return c
 }
 
+// Maximum sepcifies the maximum value that the constraint can allow
 func (ic *IntegerConstraint) Maximum(n float64) *IntegerConstraint {
 	ic.applyMaximum = true
 	ic.maximum = n
 	return ic
 }
 
+// Minimum sepcifies the minimum value that the constraint can allow
 func (ic *IntegerConstraint) Minimum(n float64) *IntegerConstraint {
 	ic.applyMinimum = true
 	ic.minimum = n
 	return ic
 }
 
+// ExclusiveMinimum specifies if the minimum value should be considered
+// a valid value
 func (ic *IntegerConstraint) ExclusiveMinimum(b bool) *IntegerConstraint {
 	ic.NumberConstraint.ExclusiveMinimum(b)
 	return ic
 }
 
+// ExclusiveMaximum specifies if the maximum value should be considered
+// a valid value
 func (ic *IntegerConstraint) ExclusiveMaximum(b bool) *IntegerConstraint {
 	ic.NumberConstraint.ExclusiveMaximum(b)
 	return ic
