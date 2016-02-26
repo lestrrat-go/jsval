@@ -19,7 +19,7 @@ func main() {
 
 // jsval schema.json [ref]
 
-type Options struct {
+type options struct {
 	Schema  string `short:"s" long:"schema" description:"the source JSON schema file"`
 	OutFile string `short:"o" long:"outfile" description:"output file to generate"`
 	Name    string `short:"n" long:"name" description:"name of the function"`
@@ -27,7 +27,7 @@ type Options struct {
 }
 
 func _main() int {
-	var opts Options
+	var opts options
 	if _, err := flags.Parse(&opts); err != nil {
 		log.Printf("%s", err)
 		return 1
