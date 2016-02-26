@@ -8,6 +8,7 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+// Object creates a new ObjectConstraint
 func Object() *ObjectConstraint {
 	return &ObjectConstraint{
 		additionalProperties: nil,
@@ -21,6 +22,7 @@ func Object() *ObjectConstraint {
 	}
 }
 
+// Required specifies required property names
 func (o *ObjectConstraint) Required(l ...string) *ObjectConstraint {
 	o.reqlock.Lock()
 	defer o.reqlock.Unlock()
@@ -31,6 +33,8 @@ func (o *ObjectConstraint) Required(l ...string) *ObjectConstraint {
 	return o
 }
 
+// IsPropRequired returns true if the given name is listed under
+// the required properties
 func (o *ObjectConstraint) IsPropRequired(s string) bool {
 	o.reqlock.Lock()
 	defer o.reqlock.Unlock()
@@ -39,21 +43,28 @@ func (o *ObjectConstraint) IsPropRequired(s string) bool {
 	return ok
 }
 
+// MinProperties specifies the minimum number of properties this
+// constraint can allow. If unspecified, it is not checked.
 func (o *ObjectConstraint) MinProperties(n int) *ObjectConstraint {
 	o.minProperties = n
 	return o
 }
 
+// MaxProperties specifies the maximum number of properties this
+// constraint can allow. If unspecified, it is not checked.
 func (o *ObjectConstraint) MaxProperties(n int) *ObjectConstraint {
 	o.maxProperties = n
 	return o
 }
 
+// AdditionalProperties specifies the constraint that additional
+// properties should be validated against.
 func (o *ObjectConstraint) AdditionalProperties(c Constraint) *ObjectConstraint {
 	o.additionalProperties = c
 	return o
 }
 
+// AddProp adds constraints for a named property.
 func (o *ObjectConstraint) AddProp(name string, c Constraint) *ObjectConstraint {
 	o.proplock.Lock()
 	defer o.proplock.Unlock()
@@ -62,6 +73,9 @@ func (o *ObjectConstraint) AddProp(name string, c Constraint) *ObjectConstraint 
 	return o
 }
 
+// PatternProperties specifies constraints that properties matching
+// this pattern must be validated against. Note that properties listed
+// using `AddProp` takes precedence.
 func (o *ObjectConstraint) PatternProperties(key *regexp.Regexp, c Constraint) *ObjectConstraint {
 	o.proplock.Lock()
 	defer o.proplock.Unlock()
@@ -70,6 +84,8 @@ func (o *ObjectConstraint) PatternProperties(key *regexp.Regexp, c Constraint) *
 	return o
 }
 
+// PropDependency specifies properties that must be present when
+// `from` is present.
 func (o *ObjectConstraint) PropDependency(from string, to ...string) *ObjectConstraint {
 	o.deplock.Lock()
 	defer o.deplock.Unlock()
@@ -80,6 +96,9 @@ func (o *ObjectConstraint) PropDependency(from string, to ...string) *ObjectCons
 	return o
 }
 
+// SchemaDependency specifies a schema that the value being validated
+// must also satisfy. Note that the "object" is the target that needs to
+// be additionally validated, not the value of the `from` property
 func (o *ObjectConstraint) SchemaDependency(from string, c Constraint) *ObjectConstraint {
 	o.deplock.Lock()
 	defer o.deplock.Unlock()
@@ -88,6 +107,8 @@ func (o *ObjectConstraint) SchemaDependency(from string, c Constraint) *ObjectCo
 	return o
 }
 
+// GetPropDependencies returns the list of property names that must
+// be present for given property name `from`
 func (o *ObjectConstraint) GetPropDependencies(from string) []string {
 	o.deplock.Lock()
 	defer o.deplock.Unlock()
@@ -100,6 +121,8 @@ func (o *ObjectConstraint) GetPropDependencies(from string) []string {
 	return l
 }
 
+// GetSchemaDependency returns the Constraint that must be used when
+// the property `from` is present.
 func (o *ObjectConstraint) GetSchemaDependency(from string) Constraint {
 	o.deplock.Lock()
 	defer o.deplock.Unlock()
@@ -164,6 +187,7 @@ func (o *ObjectConstraint) getProp(rv reflect.Value, pname string) reflect.Value
 	}
 }
 
+// Validate validates the given value against this ObjectConstraint
 func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START ObjectConstraint.Validate")
