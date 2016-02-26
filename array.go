@@ -8,6 +8,7 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+// Array creates a new ArrayConstraint
 func Array() *ArrayConstraint {
 	return &ArrayConstraint{
 		additionalItems: EmptyConstraint,
@@ -16,6 +17,7 @@ func Array() *ArrayConstraint {
 	}
 }
 
+// Validate validates the given value against this Constraint
 func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START ArrayConstraint.Validate")
@@ -106,31 +108,55 @@ pdebug.Printf("unique? -> %s", kv)
 	return nil
 }
 
+// AdditionalItems specifies the constraint that additional items
+// must be validated against. Note that if you specify `Items`
+// with this constraint, `AdditionalItems` has no effect. This
+// constraint only makes sense when used along side with the
+// `PositionalItems` constraint.
+//
+// If you want to allow any additional items, pass `EmptyConstraint`
+// to this method. If unspecified, no extra items are allowed.
 func (c *ArrayConstraint) AdditionalItems(ac Constraint) *ArrayConstraint {
 	c.additionalItems = ac
 	return c
 }
 
+// Items specifies the constraint that all items in the array
+// must be validated against
 func (c *ArrayConstraint) Items(ac Constraint) *ArrayConstraint {
 	c.items = ac
 	return c
 }
 
+// MinItems specifies the minimum number of items in the value.
+// If unspecified, the check is not performed.
 func (c *ArrayConstraint) MinItems(i int) *ArrayConstraint {
 	c.minItems = i
 	return c
 }
 
+// MaxItems specifies the maximum number of items in the value.
+// If unspecified, the check is not performed.
 func (c *ArrayConstraint) MaxItems(i int) *ArrayConstraint {
 	c.maxItems = i
 	return c
 }
 
+// PositionalItems specifies the constraint that elements in
+// each position of the array being validated. Extra items in
+// the array are validated against the constraint specified for
+// `AdditionalItems`.
 func (c *ArrayConstraint) PositionalItems(ac []Constraint) *ArrayConstraint {
 	c.positionalItems = ac
 	return c
 }
 
+// UniqueItems specifies if the array can hold non-unique items.
+// When set to true, the validation will fail unless all of your
+// elements are unique.
+//
+// Caveat: Currently we stringify the elements before comparing
+// for uniqueness. This could/should be fixed.
 func (c *ArrayConstraint) UniqueItems(b bool) *ArrayConstraint {
 	if pdebug.Enabled {
 		pdebug.Printf("Setting uniqueItems = %t", b)
