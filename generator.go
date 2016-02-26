@@ -95,7 +95,7 @@ func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 	return nil
 }
 
-func generateCode(ctx *genctx, out io.Writer, c Validator) error {
+func generateCode(ctx *genctx, out io.Writer, c interface{ Validate(interface{}) error }) error {
 	buf := &bytes.Buffer{}
 
 	switch c.(type) {

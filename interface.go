@@ -11,10 +11,6 @@ import (
 
 var zeroval = reflect.Value{}
 
-type Validator interface {
-	Validate(interface{}) error
-}
-
 // JSVal is the main validator object.
 type JSVal struct {
 	root     Constraint
@@ -100,10 +96,14 @@ type ArrayConstraint struct {
 }
 
 // DefaultFieldNamesFromStruct is the function that gets used to
-// resolve JSON names to field names when a struct is passed for
-// validation.
+// retrieve JSON names from a struct during validation
 var DefaultFieldNamesFromStruct = structinfo.JSONFieldsFromStruct
+
+// DefaultFieldIndexName is the function that gets used to
+// retrieve field index for a JSON name in the given object
 var DefaultFieldIndexFromName = structinfo.StructFieldFromJSONName
+
+// FieldIndexFromNameFunc is the signature for FieldIndexFromName
 type FieldIndexFromNameFunc func(reflect.Value, string) int
 
 // ObjectConstraint implements a constraint to match against

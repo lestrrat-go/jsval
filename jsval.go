@@ -13,7 +13,7 @@ func New() *JSVal {
 	}
 }
 
-// Validates validates the input, and return an error
+// Validate validates the input, and return an error
 // if any of the validations fail
 func (v *JSVal) Validate(x interface{}) error {
 	return v.root.Validate(x)

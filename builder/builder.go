@@ -1,5 +1,9 @@
 package builder
 
+/* Package builder contains structures and methods responsible for
+ * generating a jsval.JSVal structure from a JSON schema
+ */
+
 import (
 	"errors"
 	"math"
@@ -12,10 +16,7 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
-/* Package builder contains structures and methods responsible for
- * generating a jsval.JSVal structure from a JSON schema
- */
-
+// Builder builds Validator objects from JSON schemas
 type Builder struct{}
 
 type buildctx struct {
@@ -24,6 +25,7 @@ type buildctx struct {
 	R map[string]struct{}
 }
 
+// New creates a new builder object
 func New() *Builder {
 	return &Builder{}
 }
