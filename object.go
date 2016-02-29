@@ -173,15 +173,15 @@ func (o *ObjectConstraint) getProp(rv reflect.Value, pname string) reflect.Value
 		pv := reflect.ValueOf(pname)
 		return rv.MapIndex(pv)
 	case reflect.Struct:
-		fetcher := o.FieldIndexFromName
+		fetcher := o.FieldNameFromName
 		if fetcher == nil {
-			fetcher = DefaultFieldIndexFromName
+			fetcher = DefaultFieldNameFromName
 		}
-		i := fetcher(rv, pname)
-		if i < 0 {
+		fn := fetcher(rv, pname)
+		if fn == "" {
 			return zeroval
 		}
-		return rv.Field(i)
+		return rv.FieldByName(fn)
 	default:
 		return zeroval
 	}
