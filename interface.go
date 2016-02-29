@@ -13,9 +13,8 @@ var zeroval = reflect.Value{}
 
 // JSVal is the main validator object.
 type JSVal struct {
+	*ConstraintMap
 	root     Constraint
-	reflock  sync.Mutex
-	refs     map[string]Constraint
 	resolver *jsref.Resolver
 }
 

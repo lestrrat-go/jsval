@@ -30,7 +30,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 	// First get all of the references so we can refer to it later
 	refs := map[string]Constraint{}
 	refnames := []string{}
-	for _, v := range validators {
+	for i, v := range validators {
 		for rname, rc := range v.refs {
 			if _, ok := refs[rname]; ok {
 				continue
@@ -38,38 +38,83 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 			refs[rname] = rc
 			refnames = append(refnames, rname)
 		}
+
+		fmt.Fprintf(out, "var V%d *%s.JSVal", i, ctx.pkgname)
 	}
+
 	ctx.refs = refs
+	if len(refs) > 0 { // have refs
+		ctx.cmname = "M"
+		// sort them by reference name
+		sort.Strings(refnames)
+		fmt.Fprintf(out, "\n%svar %s *%s.ConstraintMap", ctx.Prefix(), ctx.cmname, ctx.pkgname)
 
-	// sort them by reference name
-	sort.Strings(refnames)
+		// Generate reference constraint names
+		for i, rname := range refnames {
+			vname := fmt.Sprintf("R%d", i)
+			ctx.refnames[rname] = vname
+			fmt.Fprintf(out, "\nvar %s %s.Constraint", vname, ctx.pkgname)
+		}
+	}
 
+	fmt.Fprintf(out, "\nfunc init() {")
+	g1 := ctx.Indent()
+	defer g1()
+	if len(refs) > 0 {
+		fmt.Fprintf(out, "\n%s%s = &%s.ConstraintMap{}", ctx.Prefix(), ctx.cmname, ctx.pkgname)
+		// Now generate code for references
+		for _, rname := range refnames {
+			fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), ctx.refnames[rname])
+			if err := generateCode(&ctx, out, ctx.refs[rname]); err != nil {
+				return err
+			}
+		}
+
+		p := ctx.Prefix()
+		for _, rname := range refnames {
+			fmt.Fprintf(out, "\n%s%s.SetReference(`%s`, %s)", p, ctx.cmname, rname, ctx.refnames[rname])
+		}
+	}
+
+/*
+
+	fmt.Fprintf(out, "var (")
 	for i, rname := range refnames {
 		vname := fmt.Sprintf("R%d", i)
-		fmt.Fprintf(out, "// R%d is the constraint for %s\nvar %s = ", i, rname, vname)
+		ctx.refnames[rname] = vname
+		fmt.Fprintf(out, "\n\t// %s is the constraint for %s\n\t%s %s.Constraint", vname, rname, vname, ctx.pkgname)
+	}
+	for i := range validators {
+		fmt.Fprintf(out, "\n\tV%d *%s.JSVal", i, ctx.pkgname)
+	}
+	fmt.Fprintf(out, "\n)")
+
+	fmt.Fprintf(out, "\nfunc init() {")
+	g1 := ctx.Indent()
+	defer g1()
+	for i, rname := range refnames {
+		vname := fmt.Sprintf("R%d", i)
+		fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), vname)
 		if err := generateCode(&ctx, out, refs[rname]); err != nil {
 			return err
 		}
-		fmt.Fprintf(out, "\n")
-
-		ctx.refnames[rname] = vname
 	}
-
+*/
 	// Now dump the validators
 	for i, v := range validators {
 		vname := fmt.Sprintf("V%d", i)
-		fmt.Fprintf(out, "\nvar %s = ", vname)
+		fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), vname)
 		ctx.vname = vname
 		if err := generateCode(&ctx, out, v); err != nil {
 			return err
 		}
-		fmt.Fprintf(out, "\n")
 	}
-
+	fmt.Fprintf(out, "\n}")
 	return nil
 }
 
 type genctx struct {
+	cmname string
 	prefix   []byte
 	pkgname  string
 	refs     map[string]Constraint
@@ -97,21 +142,27 @@ func generateNilCode(ctx *genctx, out io.Writer, c emptyConstraint) error {
 	return nil
 }
 func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
-	vname := ctx.vname
-	p := ctx.Prefix()
-
 	found := false
 	fmt.Fprintf(out, "%s.New()", ctx.pkgname)
+	g := ctx.Indent()
+	defer g()
+
+	p := ctx.Prefix()
+
+	if cmname := ctx.cmname; cmname != "" {
+		fmt.Fprintf(out, ".\n%sSetConstraintMap(%s)", p, cmname)
+	}
+
 	for rname, rc := range ctx.refs {
 		if v.root == rc {
-			fmt.Fprintf(out, "\n%s%s.SetRoot(%s)", p, vname, ctx.refnames[rname])
+			fmt.Fprintf(out, ".\n%sSetRoot(%s)", p, ctx.refnames[rname])
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		fmt.Fprintf(out, "\n%s%s.SetRoot(\n", p, vname)
+		fmt.Fprintf(out, ".\n%sSetRoot(\n", p)
 		g := ctx.Indent()
 		if err := generateCode(ctx, out, v.root); err != nil {
 			g()
@@ -121,16 +172,17 @@ func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 		fmt.Fprintf(out, ",\n%s)\n", p)
 	}
 
-	refs := make([]string, 0, len(v.refs))
+/*
+	refs := make([]string, 0, v.Len())
 	for ref := range v.refs {
 		refs = append(refs, ref)
 	}
 	sort.Strings(refs)
 
 	for _, ref := range refs {
-		fmt.Fprintf(out, "\n%s%s.SetReference(`%s`, %s)", p, vname, ref, ctx.refnames[ref])
+		fmt.Fprintf(out, ".\n%sSetReference(`%s`, %s)", p, ref, ctx.refnames[ref])
 	}
-
+*/
 	return nil
 }
 
@@ -202,7 +254,7 @@ func generateCode(ctx *genctx, out io.Writer, c interface {
 }
 
 func generateReferenceCode(ctx *genctx, out io.Writer, c *ReferenceConstraint) error {
-	fmt.Fprintf(out, "%s%s.Reference(%s).RefersTo(`%s`)", ctx.Prefix(), ctx.pkgname, ctx.vname, c.reference)
+	fmt.Fprintf(out, "%s%s.Reference(%s).RefersTo(`%s`)", ctx.Prefix(), ctx.pkgname, ctx.cmname, c.reference)
 
 	return nil
 }

@@ -1,24 +1,65 @@
 package jsval
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/lestrrat/go-pdebug"
 )
 
+type RefResolver interface {
+	GetReference(string) (Constraint, error)
+}
+
+type ConstraintMap struct {
+	lock sync.Mutex
+	refs map[string]Constraint
+}
+
+func (cm ConstraintMap) Len() int {
+	return len(cm.refmap())
+}
+
+func (cm *ConstraintMap) refmap() map[string]Constraint {
+	if cm.refs == nil {
+		cm.refs = make(map[string]Constraint)
+	}
+	return cm.refs
+}
+
+func (cm *ConstraintMap) SetReference(name string, c Constraint) {
+	cm.lock.Lock()
+	defer cm.lock.Unlock()
+
+	refs := cm.refmap()
+	refs[name] = c
+}
+
+func (cm *ConstraintMap) GetReference(name string) (Constraint, error) {
+	cm.lock.Lock()
+	defer cm.lock.Unlock()
+
+	refs := cm.refmap()
+	c, ok := refs[name]
+	if !ok {
+		return nil, errors.New("reference '" + name + "' not found")
+	}
+	return c, nil
+}
+
 // ReferenceConstraint is a constraint where its actual definition
 // is stored elsewhere.
 type ReferenceConstraint struct {
-	V         *JSVal
+	resolver  RefResolver
 	lock      sync.Mutex
 	resolved  Constraint
 	reference string
 }
 
 // Reference creates a new ReferenceConstraint object
-func Reference(v *JSVal) *ReferenceConstraint {
+func Reference(resolver RefResolver) *ReferenceConstraint {
 	return &ReferenceConstraint{
-		V: v,
+		resolver: resolver,
 	}
 }
 
@@ -45,7 +86,7 @@ func (r *ReferenceConstraint) Resolved() (c Constraint, err error) {
 		return r.resolved, nil
 	}
 
-	c, err = r.V.GetReference(r.reference)
+	c, err = r.resolver.GetReference(r.reference)
 	if err != nil {
 		return nil, err
 	}

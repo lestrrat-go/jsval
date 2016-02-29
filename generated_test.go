@@ -3,8 +3,7 @@ package jsval_test
 import "testing"
 
 func TestGenerated(t *testing.T) {
-	V := JSValFoo()
-	err := V.Validate(map[string]interface{}{
+	err := V0.Validate(map[string]interface{}{
 		"minItems": -1,
 	})
 	if err == nil {

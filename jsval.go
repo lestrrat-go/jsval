@@ -5,16 +5,10 @@
 // of JSON Schema.
 package jsval
 
-import (
-	"errors"
-
-	"github.com/lestrrat/go-pdebug"
-)
-
 // New creates a new JSVal instance.
 func New() *JSVal {
 	return &JSVal{
-		refs: make(map[string]Constraint),
+		ConstraintMap: &ConstraintMap{},
 	}
 }
 
@@ -25,8 +19,9 @@ func (v *JSVal) Validate(x interface{}) error {
 }
 
 // SetRoot sets the root Constraint object.
-func (v *JSVal) SetRoot(c Constraint) {
+func (v *JSVal) SetRoot(c Constraint) *JSVal {
 	v.root = c
+	return v
 }
 
 // Root returns the root Constraint object.
@@ -34,27 +29,7 @@ func (v *JSVal) Root() Constraint {
 	return v.root
 }
 
-// GetReference returns the Constraint object pointed at by `ref`.
-// It will return an error if a matching constraint has not already
-// been registered
-func (v *JSVal) GetReference(ref string) (Constraint, error) {
-	v.reflock.Lock()
-	defer v.reflock.Unlock()
-	c, ok := v.refs[ref]
-	if !ok {
-		return nil, errors.New("reference '" + ref + "' not found")
-	}
-
-	return c, nil
-}
-
-// SetReference sets a Constraint object to be associated with `ref`.
-func (v *JSVal) SetReference(ref string, c Constraint) {
-	if pdebug.Enabled {
-		pdebug.Printf("JSVal.SetReference %s", ref)
-	}
-
-	v.reflock.Lock()
-	defer v.reflock.Unlock()
-	v.refs[ref] = c
+func (v *JSVal) SetConstraintMap(cm *ConstraintMap) *JSVal {
+	v.ConstraintMap = cm
+	return v
 }
