@@ -20,25 +20,61 @@ func NewGenerator() *Generator {
 }
 
 // Process takes a validator and prints out Go code to out.
-func (g *Generator) Process(out io.Writer, v *JSVal, name string) error {
+func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 	ctx := genctx{
-		pkgname: "jsval",
-		vname:   "V",
+		pkgname:  "jsval",
+		refnames: make(map[string]string),
+		vname:    "V",
 	}
 
-	fmt.Fprintf(out, "func JSVal%s() *%s.JSVal {\n", name, ctx.pkgname)
-	g1 := ctx.Indent()
-	defer g1()
-	generateCode(&ctx, out, v)
-	fmt.Fprintf(out, "\n\treturn %s\n}\n", ctx.vname)
+	// First get all of the references so we can refer to it later
+	refs := map[string]Constraint{}
+	refnames := []string{}
+	for _, v := range validators {
+		for rname, rc := range v.refs {
+			if _, ok := refs[rname]; ok {
+				continue
+			}
+			refs[rname] = rc
+			refnames = append(refnames, rname)
+		}
+	}
+	ctx.refs = refs
+
+	// sort them by reference name
+	sort.Strings(refnames)
+
+	for i, rname := range refnames {
+		vname := fmt.Sprintf("R%d", i)
+		fmt.Fprintf(out, "// R%d is the constraint for %s\nvar %s = ", i, rname, vname)
+		if err := generateCode(&ctx, out, refs[rname]); err != nil {
+			return err
+		}
+		fmt.Fprintf(out, "\n")
+
+		ctx.refnames[rname] = vname
+	}
+
+	// Now dump the validators
+	for i, v := range validators {
+		vname := fmt.Sprintf("V%d", i)
+		fmt.Fprintf(out, "\nvar %s = ", vname)
+		ctx.vname = vname
+		if err := generateCode(&ctx, out, v); err != nil {
+			return err
+		}
+		fmt.Fprintf(out, "\n")
+	}
 
 	return nil
 }
 
 type genctx struct {
-	prefix  []byte
-	pkgname string
-	vname   string
+	prefix   []byte
+	pkgname  string
+	refs     map[string]Constraint
+	refnames map[string]string
+	vname    string
 }
 
 func (ctx *genctx) Prefix() []byte {
@@ -64,15 +100,26 @@ func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 	vname := ctx.vname
 	p := ctx.Prefix()
 
-	fmt.Fprintf(out, "%s%s := %s.New()", p, vname, ctx.pkgname)
-	fmt.Fprintf(out, "\n%s%s.SetRoot(\n", p, vname)
-	g := ctx.Indent()
-	if err := generateCode(ctx, out, v.root); err != nil {
-		g()
-		return err
+	found := false
+	fmt.Fprintf(out, "%s.New()", ctx.pkgname)
+	for rname, rc := range ctx.refs {
+		if v.root == rc {
+			fmt.Fprintf(out, "\n%s%s.SetRoot(%s)", p, vname, ctx.refnames[rname])
+			found = true
+			break
+		}
 	}
-	g()
-	fmt.Fprintf(out, ",\n%s)\n", p)
+
+	if !found {
+		fmt.Fprintf(out, "\n%s%s.SetRoot(\n", p, vname)
+		g := ctx.Indent()
+		if err := generateCode(ctx, out, v.root); err != nil {
+			g()
+			return err
+		}
+		g()
+		fmt.Fprintf(out, ",\n%s)\n", p)
+	}
 
 	refs := make([]string, 0, len(v.refs))
 	for ref := range v.refs {
@@ -81,25 +128,15 @@ func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 	sort.Strings(refs)
 
 	for _, ref := range refs {
-		c := v.refs[ref]
-		fmt.Fprintf(out, "\n%s%s.SetReference(\n%s\t`%s`,\n", p, vname, p, ref)
-		g1 := ctx.Indent()
-		if ref == "#" {
-			fmt.Fprintf(out, "%s%s.Root()", ctx.Prefix(), ctx.vname)
-		} else {
-			if err := generateCode(ctx, out, c); err != nil {
-				g1()
-				return err
-			}
-		}
-		fmt.Fprintf(out, ",\n%s)", p)
-		g1()
+		fmt.Fprintf(out, "\n%s%s.SetReference(`%s`, %s)", p, vname, ref, ctx.refnames[ref])
 	}
 
 	return nil
 }
 
-func generateCode(ctx *genctx, out io.Writer, c interface{ Validate(interface{}) error }) error {
+func generateCode(ctx *genctx, out io.Writer, c interface {
+	Validate(interface{}) error
+}) error {
 	buf := &bytes.Buffer{}
 
 	switch c.(type) {
@@ -152,7 +189,7 @@ func generateCode(ctx *genctx, out io.Writer, c interface{ Validate(interface{})
 			return err
 		}
 	case *StringConstraint:
-		if err := generateStringCode(ctx, buf, c.(*StringConstraint)); err !=nil {
+		if err := generateStringCode(ctx, buf, c.(*StringConstraint)); err != nil {
 			return err
 		}
 	}
@@ -315,13 +352,12 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 		sort.Strings(pnames)
 		for i, pname := range pnames {
 			fmt.Fprint(out, strconv.Quote(pname))
-			if i < l - 1 {
+			if i < l-1 {
 				fmt.Fprint(out, ", ")
 			}
 		}
 		fmt.Fprint(out, "})")
 	}
-
 
 	if aprop := c.additionalProperties; aprop != nil {
 		fmt.Fprintf(out, ".\n%sAdditionalProperties(\n", p)

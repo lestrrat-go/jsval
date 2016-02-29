@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/lestrrat/go-jsref"
+	"github.com/lestrrat/go-jspointer"
 	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-jsval"
 	"github.com/lestrrat/go-jsval/builder"
@@ -18,12 +18,12 @@ func main() {
 }
 
 // jsval schema.json [ref]
+// jsval hyper-schema.json -ptr /path/to/schema1 -ptr /path/to/schema2 -ptr /path/to/schema3
 
 type options struct {
-	Schema  string `short:"s" long:"schema" description:"the source JSON schema file"`
-	OutFile string `short:"o" long:"outfile" description:"output file to generate"`
-	Name    string `short:"n" long:"name" description:"name of the function"`
-	Pointer string `short:"p" long:"ptr" description:"JSON pointer within the document"`
+	Schema  string   `short:"s" long:"schema" description:"the source JSON schema file"`
+	OutFile string   `short:"o" long:"outfile" description:"output file to generate"`
+	Pointer []string `short:"p" long:"ptr" description:"JSON pointer(s) within the document to create validators with"`
 }
 
 func _main() int {
@@ -46,39 +46,56 @@ func _main() int {
 		return 1
 	}
 
-	var s *schema.Schema
-	if ptr := opts.Pointer; ptr != "" {
-		resolver := jsref.New()
-		x, err := resolver.Resolve(m, ptr)
+	// Extract possibly multiple schemas out of the main JSON document.
+	var schemas []*schema.Schema
+	ptrs := opts.Pointer
+	if len(ptrs) == 0 {
+		s, err := schema.ReadFile(opts.Schema)
 		if err != nil {
 			log.Printf("%s", err)
 			return 1
 		}
-
-		m2, ok := x.(map[string]interface{})
-		if !ok {
-			log.Printf("Expected map")
-			return 1
-		}
-
-		s = schema.New()
-		if err := s.Extract(m2); err != nil {
-			log.Printf("%s", err)
-			return 1
-		}
+		schemas = []*schema.Schema{s}
 	} else {
-		s, err = schema.ReadFile(opts.Schema)
-		if err != nil {
-			log.Printf("%s", err)
-			return 1
+		for _, ptr := range ptrs {
+			log.Printf("Resolving pointer '%s'", ptr)
+			resolver, err := jspointer.New(ptr)
+			if err != nil {
+				log.Printf("%s", err)
+				return 1
+			}
+
+			resolved, err := resolver.Get(m)
+			if err != nil {
+				log.Printf("%s", err)
+				return 1
+			}
+
+			m2, ok := resolved.(map[string]interface{})
+			if !ok {
+				log.Printf("Expected map")
+				return 1
+			}
+
+			s := schema.New()
+			if err := s.Extract(m2); err != nil {
+				log.Printf("%s", err)
+				return 1
+			}
+			schemas = append(schemas, s)
 		}
 	}
 
 	b := builder.New()
-	v, err := b.Build(s)
-	if err != nil {
-		log.Printf("%s", err)
-		return 1
+
+	validators := make([]*jsval.JSVal, len(schemas))
+	for i, s := range schemas {
+		v, err := b.BuildWithCtx(s, m)
+		if err != nil {
+			log.Printf("%s", err)
+			return 1
+		}
+		validators[i] = v
 	}
 
 	var out io.Writer
@@ -96,7 +113,7 @@ func _main() int {
 	}
 
 	g := jsval.NewGenerator()
-	if err := g.Process(out, v, opts.Name); err != nil {
+	if err := g.Process(out, validators...); err != nil {
 		log.Printf("%s", err)
 		return 1
 	}

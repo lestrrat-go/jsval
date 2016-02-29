@@ -43,6 +43,10 @@ func (b *Builder) Build(s *schema.Schema) (v *jsval.JSVal, err error) {
 		}()
 	}
 
+	if s == nil {
+		return nil, errors.New("nil schema")
+	}
+
 	return b.BuildWithCtx(s, nil)
 }
 
@@ -58,6 +62,10 @@ func (b *Builder) BuildWithCtx(s *schema.Schema, jsctx interface{}) (v *jsval.JS
 				g.IRelease("END Builder.BuildWithCtx (FAIL): %s", err)
 			}
 		}()
+	}
+
+	if s == nil {
+		return nil, errors.New("nil schema")
 	}
 
 	v = jsval.New()
