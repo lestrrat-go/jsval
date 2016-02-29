@@ -39,7 +39,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 			refnames = append(refnames, rname)
 		}
 
-		fmt.Fprintf(out, "var V%d *%s.JSVal", i, ctx.pkgname)
+		fmt.Fprintf(out, "\nvar V%d *%s.JSVal", i, ctx.pkgname)
 	}
 
 	ctx.refs = refs
@@ -76,30 +76,6 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 		}
 	}
 
-/*
-
-	fmt.Fprintf(out, "var (")
-	for i, rname := range refnames {
-		vname := fmt.Sprintf("R%d", i)
-		ctx.refnames[rname] = vname
-		fmt.Fprintf(out, "\n\t// %s is the constraint for %s\n\t%s %s.Constraint", vname, rname, vname, ctx.pkgname)
-	}
-	for i := range validators {
-		fmt.Fprintf(out, "\n\tV%d *%s.JSVal", i, ctx.pkgname)
-	}
-	fmt.Fprintf(out, "\n)")
-
-	fmt.Fprintf(out, "\nfunc init() {")
-	g1 := ctx.Indent()
-	defer g1()
-	for i, rname := range refnames {
-		vname := fmt.Sprintf("R%d", i)
-		fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), vname)
-		if err := generateCode(&ctx, out, refs[rname]); err != nil {
-			return err
-		}
-	}
-*/
 	// Now dump the validators
 	for i, v := range validators {
 		vname := fmt.Sprintf("V%d", i)
