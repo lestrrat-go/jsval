@@ -39,7 +39,11 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 			refnames = append(refnames, rname)
 		}
 
-		fmt.Fprintf(out, "\nvar V%d *%s.JSVal", i, ctx.pkgname)
+		if v.Name == "" {
+			v.Name = fmt.Sprintf("V%d", i)
+		}
+
+		fmt.Fprintf(out, "\nvar %s *%s.JSVal", v.Name, ctx.pkgname)
 	}
 
 	ctx.refs = refs
@@ -77,10 +81,8 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 	}
 
 	// Now dump the validators
-	for i, v := range validators {
-		vname := fmt.Sprintf("V%d", i)
-		fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), vname)
-		ctx.vname = vname
+	for _, v := range validators {
+		fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), v.Name)
 		if err := generateCode(&ctx, out, v); err != nil {
 			return err
 		}
