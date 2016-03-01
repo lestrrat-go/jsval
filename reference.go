@@ -7,15 +7,20 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+// RefResolver is a mandatory object that you must pass to a 
+// ReferenceConstraint upon its creation. This is responsible
+// for resolving the reference to an actual constraint.
 type RefResolver interface {
 	GetReference(string) (Constraint, error)
 }
 
+// ConstraintMap is an implementation of RefResolver
 type ConstraintMap struct {
 	lock sync.Mutex
 	refs map[string]Constraint
 }
 
+// Len returns the number of references stored in this ConstraintMap
 func (cm ConstraintMap) Len() int {
 	return len(cm.refmap())
 }
@@ -27,6 +32,7 @@ func (cm *ConstraintMap) refmap() map[string]Constraint {
 	return cm.refs
 }
 
+// SetReference registeres a new Constraint to a name
 func (cm *ConstraintMap) SetReference(name string, c Constraint) {
 	cm.lock.Lock()
 	defer cm.lock.Unlock()
@@ -35,6 +41,7 @@ func (cm *ConstraintMap) SetReference(name string, c Constraint) {
 	refs[name] = c
 }
 
+// GetReference fetches the Constraint associated with the given name
 func (cm *ConstraintMap) GetReference(name string) (Constraint, error) {
 	cm.lock.Lock()
 	defer cm.lock.Unlock()

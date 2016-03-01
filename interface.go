@@ -14,6 +14,11 @@ var zeroval = reflect.Value{}
 // JSVal is the main validator object.
 type JSVal struct {
 	*ConstraintMap
+	// Name is the name that will be used to generate code for this validator.
+	// If unspecified, the generator will create variable names like `V0`, `V1`,
+	// `V2`, etc. If you want to generate more meaningful names, you should
+	// set this value manually. For example, if you are using jsval with a
+	// scaffold generator, you might want to set this to a human-readable value
 	Name     string
 	root     Constraint
 	resolver *jsref.Resolver
@@ -103,7 +108,7 @@ var DefaultFieldNamesFromStruct = structinfo.JSONFieldsFromStruct
 // retrieve field index for a JSON name in the given object
 var DefaultFieldNameFromName = structinfo.StructFieldFromJSONName
 
-// FieldIndexFromNameFunc is the signature for FieldIndexFromName
+// FieldNameFromNameFunc is the signature for FieldNameFromName
 type FieldNameFromNameFunc func(reflect.Value, string) string
 
 // ObjectConstraint implements a constraint to match against

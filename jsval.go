@@ -29,6 +29,11 @@ func (v *JSVal) Root() Constraint {
 	return v.root
 }
 
+// SetConstraintMap allows you to set the map that is referred to
+// when resolving JSON references within constraints. By setting
+// this to a common map, for example, you can share the same references
+// to save you some memory space and sanity. See an example in the
+// `generated_validator_test.go` file.
 func (v *JSVal) SetConstraintMap(cm *ConstraintMap) *JSVal {
 	v.ConstraintMap = cm
 	return v
