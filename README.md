@@ -82,24 +82,28 @@ go get -u github.com/lestrrat/go-jsval/cmd/jsval
 
 ## Can generate validators from JSON Schema definition
 
-The following command creates a file named `foo_jsval.go` 
-which contains a function named `JSvalFoo()`, which
-returns a validator created from the the schema:
+The following command creates a file named `jsval.go` 
+which contains various variables containing `*jsval.JSVal`
+structures so you can include them in your code:
 
 ```
-jsval -schema schema.json -name Foo -o foo_jsval.go
+jsval -s schema.json -o jsval.go
 ```
 
 See the file `generated_validator_test.go` for a sample
 generated from JSON Schema schema.
 
-If your document isn't a real JSON schema, but contains a
-JSON schema (like JSON Hyper Schema), you can use the `-ptr`
-argument to access a specific portion of a JSON document:
+If your document isn't a real JSON schema but contains one
+or more JSON schema (like JSON Hyper Schema) somewhere inside
+the document, you can use the `-p` argument to access a
+specific portion of a JSON document:
 
 ```
-jsval -schema hyper.json -name Foo -ptr "#/links/0"
+jsval -s hyper.json -p "#/links/0" -p "#/lnks/1"
 ```
+
+This will generate a set of validators, with JSON references
+within the file `hyper.json` properly resolved.
 
 ## Can handle JSON References in JSON Schema definitions
 
