@@ -3,6 +3,7 @@ package jsval
 import (
 	"bytes"
 	"fmt"
+	"go/format"
 	"io"
 	"reflect"
 	"sort"
@@ -28,6 +29,8 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 		vname:    "V",
 	}
 
+	buf := bytes.Buffer{}
+
 	// First get all of the references so we can refer to it later
 	refs := map[string]Constraint{}
 	refnames := []string{}
@@ -44,7 +47,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 			v.Name = fmt.Sprintf("V%d", i)
 		}
 
-		fmt.Fprintf(out, "\nvar %s *%s.JSVal", v.Name, ctx.pkgname)
+		fmt.Fprintf(&buf, "\nvar %s *%s.JSVal", v.Name, ctx.pkgname)
 	}
 
 	ctx.refs = refs
@@ -52,24 +55,22 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 		ctx.cmname = "M"
 		// sort them by reference name
 		sort.Strings(refnames)
-		fmt.Fprintf(out, "\n%svar %s *%s.ConstraintMap", ctx.Prefix(), ctx.cmname, ctx.pkgname)
+		fmt.Fprintf(&buf, "\nvar %s *%s.ConstraintMap", ctx.cmname, ctx.pkgname)
 
 		// Generate reference constraint names
 		for i, rname := range refnames {
 			vname := fmt.Sprintf("R%d", i)
 			ctx.refnames[rname] = vname
-			fmt.Fprintf(out, "\nvar %s %s.Constraint", vname, ctx.pkgname)
+			fmt.Fprintf(&buf, "\nvar %s %s.Constraint", vname, ctx.pkgname)
 		}
 	}
 
-	fmt.Fprintf(out, "\nfunc init() {")
-	g1 := ctx.Indent()
-	defer g1()
+	fmt.Fprintf(&buf, "\nfunc init() {")
 	if len(refs) > 0 {
-		fmt.Fprintf(out, "\n%s%s = &%s.ConstraintMap{}", ctx.Prefix(), ctx.cmname, ctx.pkgname)
+		fmt.Fprintf(&buf, "\n%s = &%s.ConstraintMap{}", ctx.cmname, ctx.pkgname)
 		// Now generate code for references
 		for _, rname := range refnames {
-			fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), ctx.refnames[rname])
+			fmt.Fprintf(&buf, "\n%s = ", ctx.refnames[rname])
 			rbuf := bytes.Buffer{}
 			if err := generateCode(&ctx, &rbuf, ctx.refs[rname]); err != nil {
 				return err
@@ -82,83 +83,65 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 					break
 				}
 			}
-			fmt.Fprint(out, rs)
+			fmt.Fprint(&buf, rs)
 		}
 
-		p := ctx.Prefix()
 		for _, rname := range refnames {
-			fmt.Fprintf(out, "\n%s%s.SetReference(`%s`, %s)", p, ctx.cmname, rname, ctx.refnames[rname])
+			fmt.Fprintf(&buf, "\n%s.SetReference(`%s`, %s)", ctx.cmname, rname, ctx.refnames[rname])
 		}
 	}
 
 	// Now dump the validators
 	for _, v := range validators {
-		fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), v.Name)
-		if err := generateCode(&ctx, out, v); err != nil {
+		fmt.Fprintf(&buf, "\n%s = ", v.Name)
+		if err := generateCode(&ctx, &buf, v); err != nil {
 			return err
 		}
 	}
-	fmt.Fprintf(out, "\n}")
+	fmt.Fprintf(&buf, "\n}")
+
+	fsrc, err := format.Source(buf.Bytes())
+	if err != nil {
+		return err
+	}
+	out.Write(fsrc)
 	return nil
 }
 
 type genctx struct {
 	cmname   string
-	prefix   []byte
 	pkgname  string
 	refs     map[string]Constraint
 	refnames map[string]string
 	vname    string
 }
 
-func (ctx *genctx) Prefix() []byte {
-	return ctx.prefix
-}
-
-func (ctx *genctx) Indent() func() {
-	ctx.prefix = append(ctx.prefix, '\t')
-	return func() {
-		l := len(ctx.prefix)
-		if l == 0 {
-			return
-		}
-		ctx.prefix = ctx.prefix[:l-1]
-	}
-}
-
 func generateNilCode(ctx *genctx, out io.Writer, c emptyConstraint) error {
-	fmt.Fprintf(out, "%s%s.EmptyConstraint", ctx.Prefix(), ctx.pkgname)
+	fmt.Fprintf(out, "%s.EmptyConstraint", ctx.pkgname)
 	return nil
 }
 func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 	found := false
 	fmt.Fprintf(out, "%s.New()", ctx.pkgname)
-	g := ctx.Indent()
-	defer g()
-
-	p := ctx.Prefix()
 
 	if cmname := ctx.cmname; cmname != "" {
-		fmt.Fprintf(out, ".\n%sSetConstraintMap(%s)", p, cmname)
+		fmt.Fprintf(out, ".\nSsetConstraintMap(%s)", cmname)
 	}
 
 	for rname, rc := range ctx.refs {
 		if v.root == rc {
-			fmt.Fprintf(out, ".\n%sSetRoot(%s)", p, ctx.refnames[rname])
+			fmt.Fprintf(out, ".\nSetRoot(%s)", ctx.refnames[rname])
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		fmt.Fprintf(out, ".\n%sSetRoot(\n", p)
-		g := ctx.Indent()
+		fmt.Fprint(out, ".\nSetRoot(\n")
 		if err := generateCode(ctx, out, v.root); err != nil {
-			g()
 			return err
 		}
-		g()
-		fmt.Fprintf(out, ",\n%s)\n", p)
+		fmt.Fprint(out, ",\n)\n")
 	}
 
 	return nil
@@ -232,7 +215,7 @@ func generateCode(ctx *genctx, out io.Writer, c interface {
 }
 
 func generateReferenceCode(ctx *genctx, out io.Writer, c *ReferenceConstraint) error {
-	fmt.Fprintf(out, "%s%s.Reference(%s).RefersTo(`%s`)", ctx.Prefix(), ctx.pkgname, ctx.cmname, c.reference)
+	fmt.Fprintf(out, "%s.Reference(%s).RefersTo(`%s`)", ctx.pkgname, ctx.cmname, c.reference)
 
 	return nil
 }
@@ -241,20 +224,13 @@ func generateComboCode(ctx *genctx, out io.Writer, name string, clist []Constrai
 	if len(clist) == 0 {
 		return generateNilCode(ctx, out, EmptyConstraint)
 	}
-	p := ctx.Prefix()
-	fmt.Fprintf(out, "%s%s.%s()", p, ctx.pkgname, name)
+	fmt.Fprintf(out, "%s.%s()", ctx.pkgname, name)
 	for _, c1 := range clist {
-		g1 := ctx.Indent()
-		fmt.Fprintf(out, ".\n%sAdd(\n", ctx.Prefix())
-		g2 := ctx.Indent()
+		fmt.Fprint(out, ".\nAdd(\n")
 		if err := generateCode(ctx, out, c1); err != nil {
-			g2()
-			g1()
 			return err
 		}
-		g2()
-		fmt.Fprintf(out, ",\n%s)", ctx.Prefix())
-		g1()
+		fmt.Fprint(out, ",\n)")
 	}
 	return nil
 }
@@ -272,7 +248,7 @@ func generateOneOfCode(ctx *genctx, out io.Writer, c *OneOfConstraint) error {
 }
 
 func generateIntegerCode(ctx *genctx, out io.Writer, c *IntegerConstraint) error {
-	fmt.Fprintf(out, "%s%s.Integer()", ctx.Prefix(), ctx.pkgname)
+	fmt.Fprintf(out, "%s.Integer()", ctx.pkgname)
 
 	if c.applyMinimum {
 		fmt.Fprintf(out, ".Minimum(%d)", int(c.minimum))
@@ -286,7 +262,7 @@ func generateIntegerCode(ctx *genctx, out io.Writer, c *IntegerConstraint) error
 }
 
 func generateNumberCode(ctx *genctx, out io.Writer, c *NumberConstraint) error {
-	fmt.Fprintf(out, "%s%s.Number()", ctx.Prefix(), ctx.pkgname)
+	fmt.Fprintf(out, "%s.Number()", ctx.pkgname)
 
 	if c.applyMinimum {
 		fmt.Fprintf(out, ".Minimum(%f)", c.minimum)
@@ -330,7 +306,7 @@ func generateEnumCode(ctx *genctx, out io.Writer, c *EnumConstraint) error {
 }
 
 func generateStringCode(ctx *genctx, out io.Writer, c *StringConstraint) error {
-	fmt.Fprintf(out, "%s%s.String()", ctx.Prefix(), ctx.pkgname)
+	fmt.Fprintf(out, "%s.String()", ctx.pkgname)
 
 	if c.maxLength > -1 {
 		fmt.Fprintf(out, ".MaxLength(%d)", c.maxLength)
@@ -360,20 +336,14 @@ func generateStringCode(ctx *genctx, out io.Writer, c *StringConstraint) error {
 }
 
 func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
-	fmt.Fprintf(out, "%s%s.Object()", ctx.Prefix(), ctx.pkgname)
-
-	// object code usually becomes quite nested, so we indent one level
-	// to begin with
-	g1 := ctx.Indent()
-	defer g1()
-	p := ctx.Prefix()
+	fmt.Fprintf(out, "%s.Object()", ctx.pkgname)
 
 	if c.HasDefault() {
-		fmt.Fprintf(out, ".\n%sDefault(%s)", p, c.DefaultValue())
+		fmt.Fprintf(out, ".\nDefault(%s)", c.DefaultValue())
 	}
 
 	if len(c.required) > 0 {
-		fmt.Fprintf(out, ".\n%sRequired([]string{", p)
+		fmt.Fprint(out, ".\nRequired([]string{")
 		l := len(c.required)
 		pnames := make([]string, 0, l)
 		for pname := range c.required {
@@ -390,14 +360,11 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 	}
 
 	if aprop := c.additionalProperties; aprop != nil {
-		fmt.Fprintf(out, ".\n%sAdditionalProperties(\n", p)
-		g := ctx.Indent()
+		fmt.Fprintf(out, ".\nAdditionalProperties(\n")
 		if err := generateCode(ctx, out, aprop); err != nil {
-			g()
 			return err
 		}
-		fmt.Fprintf(out, ",\n%s)", p)
-		g()
+		fmt.Fprintf(out, ",\n)")
 	}
 
 	pnames := make([]string, 0, len(c.properties))
@@ -409,20 +376,17 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 	for _, pname := range pnames {
 		pdef := c.properties[pname]
 
-		g := ctx.Indent()
-		fmt.Fprintf(out, ".\n%sAddProp(\n%s\t`%s`,\n", p, p, pname)
+		fmt.Fprintf(out, ".\nAddProp(\n`%s`,\n", pname)
 		if err := generateCode(ctx, out, pdef); err != nil {
-			g()
 			return err
 		}
-		fmt.Fprintf(out, ",\n%s)", p)
-		g()
+		fmt.Fprint(out, ",\n)")
 	}
 
 	if m := c.propdeps; len(m) > 0 {
 		for from, deplist := range m {
 			for _, to := range deplist {
-				fmt.Fprintf(out, ".\n%sPropDependency(%s, %s)", ctx.Prefix(), strconv.Quote(from), strconv.Quote(to))
+				fmt.Fprintf(out, ".\nPropDependency(%s, %s)", strconv.Quote(from), strconv.Quote(to))
 			}
 		}
 	}
@@ -431,65 +395,47 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 }
 
 func generateArrayCode(ctx *genctx, out io.Writer, c *ArrayConstraint) error {
-	fmt.Fprintf(out, "%s%s.Array()", ctx.Prefix(), ctx.pkgname)
+	fmt.Fprintf(out, "%s.Array()", ctx.pkgname)
 
 	if cc := c.items; cc != nil {
-		g1 := ctx.Indent()
-		fmt.Fprintf(out, ".\n%sItems(\n", ctx.Prefix())
-		g2 := ctx.Indent()
+		fmt.Fprint(out, ".\nItems(\n")
 		if err := generateCode(ctx, out, cc); err != nil {
-			g2()
-			g1()
 			return err
 		}
-		g2()
-		fmt.Fprintf(out, ",\n%s)", ctx.Prefix())
-		g1()
+		fmt.Fprint(out, ",\n)")
 	}
 
 	if cc := c.additionalItems; cc != nil {
-		g1 := ctx.Indent()
-		fmt.Fprintf(out, ".\n%sAdditionalItems(\n", ctx.Prefix())
-		g2 := ctx.Indent()
+		fmt.Fprint(out, ".\nAdditionalItems(\n")
 		if err := generateCode(ctx, out, cc); err != nil {
-			g2()
-			g1()
 			return err
 		}
-		g2()
-		fmt.Fprintf(out, ",\n%s)", ctx.Prefix())
-		g1()
+		fmt.Fprintf(out, ",\n)")
 	}
 
 	if cc := c.positionalItems; len(cc) > 0 {
-		g1 := ctx.Indent()
-		fmt.Fprintf(out, ".\n%sPositionalItems([]%s.Constraint{\n", ctx.Prefix(), ctx.pkgname)
+		fmt.Fprintf(out, ".\nPositionalItems([]%s.Constraint{\n", ctx.pkgname)
 		for _, ccc := range cc {
-			g2 := ctx.Indent()
 			if err := generateCode(ctx, out, ccc); err != nil {
-				g2()
-				g1()
 			}
 			fmt.Fprintf(out, ",\n")
-			g2()
 		}
-		fmt.Fprintf(out, "%s})", ctx.Prefix())
-		g1()
+		fmt.Fprint(out, "})")
 	}
 	if c.minItems > -1 {
-		fmt.Fprintf(out, ".\n%s\tMinItems(%d)", ctx.Prefix(), c.minItems)
+		fmt.Fprintf(out, ".\nMinItems(%d)", c.minItems)
 	}
 	if c.maxItems > -1 {
-		fmt.Fprintf(out, ".\n%s\tMaxItems(%d)", ctx.Prefix(), c.maxItems)
+		fmt.Fprintf(out, ".\nMaxItems(%d)", c.maxItems)
 	}
 	if c.uniqueItems {
-		fmt.Fprintf(out, ".\n%s\tUniqueItems(true)", ctx.Prefix())
+		fmt.Fprint(out, ".\nUniqueItems(true)")
 	}
 	return nil
 }
 
 func generateBooleanCode(ctx *genctx, out io.Writer, c *BooleanConstraint) error {
-	fmt.Fprintf(out, "%s%s.Boolean()", ctx.Prefix(), ctx.pkgname)
+	fmt.Fprintf(out, "%s.Boolean()", ctx.pkgname)
 	if c.HasDefault() {
 		fmt.Fprintf(out, ".Default(%t)", c.DefaultValue())
 	}
@@ -497,13 +443,10 @@ func generateBooleanCode(ctx *genctx, out io.Writer, c *BooleanConstraint) error
 }
 
 func generateNotCode(ctx *genctx, out io.Writer, c *NotConstraint) error {
-	fmt.Fprintf(out, "%s%s.Not(\n", ctx.Prefix(), ctx.pkgname)
-	g := ctx.Indent()
+	fmt.Fprintf(out, "%s.Not(\n", ctx.pkgname)
 	if err := generateCode(ctx, out, c.child); err != nil {
-		g()
 		return err
 	}
-	g()
-	fmt.Fprintf(out, "\n%s)", ctx.Prefix())
+	fmt.Fprint(out, "\n)")
 	return nil
 }
