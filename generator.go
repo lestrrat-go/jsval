@@ -432,14 +432,58 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 
 func generateArrayCode(ctx *genctx, out io.Writer, c *ArrayConstraint) error {
 	fmt.Fprintf(out, "%s%s.Array()", ctx.Prefix(), ctx.pkgname)
+
+	if cc := c.items; cc != nil {
+		g1 := ctx.Indent()
+		fmt.Fprintf(out, ".\n%sItems(\n", ctx.Prefix())
+		g2 := ctx.Indent()
+		if err := generateCode(ctx, out, cc); err != nil {
+			g2()
+			g1()
+			return err
+		}
+		g2()
+		fmt.Fprintf(out, ",\n%s)", ctx.Prefix())
+		g1()
+	}
+
+	if cc := c.additionalItems; cc != nil {
+		g1 := ctx.Indent()
+		fmt.Fprintf(out, ".\n%sAdditionalItems(\n", ctx.Prefix())
+		g2 := ctx.Indent()
+		if err := generateCode(ctx, out, cc); err != nil {
+			g2()
+			g1()
+			return err
+		}
+		g2()
+		fmt.Fprintf(out, ",\n%s)", ctx.Prefix())
+		g1()
+	}
+
+	if cc := c.positionalItems; len(cc) > 0 {
+		g1 := ctx.Indent()
+		fmt.Fprintf(out, ".\n%sPositionalItems([]%s.Constraint{\n", ctx.Prefix(), ctx.pkgname)
+		for _, ccc := range cc {
+			g2 := ctx.Indent()
+			if err := generateCode(ctx, out, ccc); err != nil {
+				g2()
+				g1()
+			}
+			fmt.Fprintf(out, ",\n")
+			g2()
+		}
+		fmt.Fprintf(out, "%s})", ctx.Prefix())
+		g1()
+	}
 	if c.minItems > -1 {
-		fmt.Fprintf(out, ".MinItems(%d)", c.minItems)
+		fmt.Fprintf(out, ".\n%s\tMinItems(%d)", ctx.Prefix(), c.minItems)
 	}
 	if c.maxItems > -1 {
-		fmt.Fprintf(out, ".MaxItems(%d)", c.maxItems)
+		fmt.Fprintf(out, ".\n%s\tMaxItems(%d)", ctx.Prefix(), c.maxItems)
 	}
 	if c.uniqueItems {
-		fmt.Fprintf(out, ".UniqueItems(true)")
+		fmt.Fprintf(out, ".\n%s\tUniqueItems(true)", ctx.Prefix())
 	}
 	return nil
 }
