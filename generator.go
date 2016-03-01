@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // Generator is responsible for generating Go code that
@@ -69,9 +70,19 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 		// Now generate code for references
 		for _, rname := range refnames {
 			fmt.Fprintf(out, "\n%s%s = ", ctx.Prefix(), ctx.refnames[rname])
-			if err := generateCode(&ctx, out, ctx.refs[rname]); err != nil {
+			rbuf := bytes.Buffer{}
+			if err := generateCode(&ctx, &rbuf, ctx.refs[rname]); err != nil {
 				return err
 			}
+			// Remove indentation here
+			rs := rbuf.String()
+			for i, r := range rs {
+				if !unicode.IsSpace(r) {
+					rs = rs[i:]
+					break
+				}
+			}
+			fmt.Fprint(out, rs)
 		}
 
 		p := ctx.Prefix()
@@ -92,7 +103,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 }
 
 type genctx struct {
-	cmname string
+	cmname   string
 	prefix   []byte
 	pkgname  string
 	refs     map[string]Constraint
@@ -150,17 +161,6 @@ func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 		fmt.Fprintf(out, ",\n%s)\n", p)
 	}
 
-/*
-	refs := make([]string, 0, v.Len())
-	for ref := range v.refs {
-		refs = append(refs, ref)
-	}
-	sort.Strings(refs)
-
-	for _, ref := range refs {
-		fmt.Fprintf(out, ".\n%sSetReference(`%s`, %s)", p, ref, ctx.refnames[ref])
-	}
-*/
 	return nil
 }
 
