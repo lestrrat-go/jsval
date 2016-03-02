@@ -9,11 +9,11 @@ import (
 )
 
 // Enum specifies the values that this constraint can have
-func (nc *NumberConstraint) Enum(l []interface{}) *NumberConstraint {
+func (nc *NumberConstraint) Enum(l ...interface{}) *NumberConstraint {
 	if nc.enums == nil {
 		nc.enums = Enum()
 	}
-	nc.enums.Enum(l)
+	nc.enums.Enum(l...)
 	return nc
 }
 

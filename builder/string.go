@@ -31,7 +31,7 @@ func buildStringConstraint(ctx *buildctx, c *jsval.StringConstraint, s *schema.S
 	}
 
 	if lst := s.Enum; len(lst) > 0 {
-		c.Enum(lst)
+		c.Enum(lst...)
 	}
 
 	if v := s.Default; v != nil {

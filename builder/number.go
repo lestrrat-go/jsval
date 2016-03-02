@@ -33,7 +33,7 @@ func buildIntegerConstraint(ctx *buildctx, nc *jsval.IntegerConstraint, s *schem
 	}
 
 	if lst := s.Enum; len(lst) > 0 {
-		nc.Enum(lst)
+		nc.Enum(lst...)
 	}
 
 	if v := s.Default; v != nil {

@@ -180,11 +180,11 @@ func isDomainName(s string) bool {
 }
 
 // Enum specifies the enumeration of the possible values
-func (sc *StringConstraint) Enum(l []interface{}) *StringConstraint {
+func (sc *StringConstraint) Enum(l ...interface{}) *StringConstraint {
 	if sc.enums == nil {
 		sc.enums = Enum()
 	}
-	sc.enums.Enum(l)
+	sc.enums.Enum(l...)
 	return sc
 }
 

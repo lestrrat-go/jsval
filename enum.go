@@ -12,7 +12,7 @@ func Enum(v ...interface{}) *EnumConstraint {
 }
 
 // Enum method sets the possible enumerations
-func (c *EnumConstraint) Enum(v []interface{}) *EnumConstraint {
+func (c *EnumConstraint) Enum(v ...interface{}) *EnumConstraint {
 	c.enums = v
 	return c
 }

@@ -10,6 +10,7 @@ var R2 jsval.Constraint
 var R3 jsval.Constraint
 var R4 jsval.Constraint
 var R5 jsval.Constraint
+
 func init() {
 	M = &jsval.ConstraintMap{}
 	R0 = jsval.Object().
@@ -217,7 +218,7 @@ func init() {
 			jsval.EmptyConstraint,
 		).
 		MinItems(1)
-	R4 = jsval.String().Enum([]interface{}{"array", "boolean", "integer", "null", "number", "object", "string"},)
+	R4 = jsval.String().Enum("array", "boolean", "integer", "null", "number", "object", "string")
 	R5 = jsval.Array().
 		Items(
 			jsval.String(),

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/format"
 	"io"
+	"os"
 	"reflect"
 	"sort"
 	"strconv"
@@ -102,6 +103,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 
 	fsrc, err := format.Source(buf.Bytes())
 	if err != nil {
+		os.Stderr.Write(buf.Bytes())
 		return err
 	}
 	out.Write(fsrc)
@@ -288,19 +290,24 @@ func generateNumberCode(ctx *genctx, out io.Writer, c *NumberConstraint) error {
 }
 
 func generateEnumCode(ctx *genctx, out io.Writer, c *EnumConstraint) error {
-	fmt.Fprintf(out, "[]interface{}{")
+	fmt.Fprintf(out, "")
 	l := len(c.enums)
 	for i, v := range c.enums {
 		rv := reflect.ValueOf(v)
 		switch rv.Kind() {
 		case reflect.String:
 			fmt.Fprintf(out, "%s", strconv.Quote(rv.String()))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			fmt.Fprintf(out, "%d", rv.Int())
+		case reflect.Float32, reflect.Float64:
+			fmt.Fprintf(out, "%f", rv.Float())
+		default:
+			return fmt.Errorf("failed to stringify enum value %#v", rv.Interface())
 		}
 		if i < l-1 {
 			fmt.Fprintf(out, ", ")
 		}
 	}
-	fmt.Fprintf(out, "}")
 
 	return nil
 }
