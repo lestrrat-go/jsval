@@ -343,7 +343,7 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 	}
 
 	if len(c.required) > 0 {
-		fmt.Fprint(out, ".\nRequired([]string{")
+		fmt.Fprint(out, ".\nRequired(")
 		l := len(c.required)
 		pnames := make([]string, 0, l)
 		for pname := range c.required {
@@ -356,7 +356,7 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 				fmt.Fprint(out, ", ")
 			}
 		}
-		fmt.Fprint(out, "})")
+		fmt.Fprint(out, ")")
 	}
 
 	if aprop := c.additionalProperties; aprop != nil {
