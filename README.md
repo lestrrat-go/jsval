@@ -13,7 +13,14 @@ a tool to generate validators in Go from JSON schemas.
 
 # Synopsis
 
-Read a schema file and create a validator:
+Read a schema file and create a validator using `jsval` command:
+
+```shell
+jsval -s /path/to/schema.json -o validator.go
+jsval -s /path/to/hyperschema.json -o validator.go -p "#/links/0/schema" -p "#/links/1/schema" -p "#/links/2/schema"
+```
+
+Read a schema file and create a validator programatically:
 
 ```go
 package jsval_test
