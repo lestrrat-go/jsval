@@ -321,7 +321,7 @@ func generateStringCode(ctx *genctx, out io.Writer, c *StringConstraint) error {
 	}
 
 	if rx := c.regexp; rx != nil {
-		fmt.Fprintf(out, ".Regexp(`%s`)", rx.String())
+		fmt.Fprintf(out, ".RegexpString(`%s`)", rx.String())
 	}
 
 	if enum := c.enums; enum != nil {
