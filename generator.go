@@ -125,7 +125,7 @@ func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 	fmt.Fprintf(out, "%s.New()", ctx.pkgname)
 
 	if cmname := ctx.cmname; cmname != "" {
-		fmt.Fprintf(out, ".\nSsetConstraintMap(%s)", cmname)
+		fmt.Fprintf(out, ".\nSetConstraintMap(%s)", cmname)
 	}
 
 	for rname, rc := range ctx.refs {
