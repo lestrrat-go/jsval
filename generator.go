@@ -35,6 +35,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 	// First get all of the references so we can refer to it later
 	refs := map[string]Constraint{}
 	refnames := []string{}
+	valnames := []string{}
 	for i, v := range validators {
 		for rname, rc := range v.refs {
 			if _, ok := refs[rname]; ok {
@@ -47,8 +48,12 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 		if v.Name == "" {
 			v.Name = fmt.Sprintf("V%d", i)
 		}
+		valnames = append(valnames, v.Name)
+	}
 
-		fmt.Fprintf(&buf, "\nvar %s *%s.JSVal", v.Name, ctx.pkgname)
+	sort.Strings(valnames)
+	for _, vname := range valnames {
+		fmt.Fprintf(&buf, "\nvar %s *%s.JSVal", vname, ctx.pkgname)
 	}
 
 	ctx.refs = refs
