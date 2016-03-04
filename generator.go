@@ -2,6 +2,7 @@ package jsval
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go/format"
 	"io"
@@ -342,6 +343,16 @@ func generateStringCode(ctx *genctx, out io.Writer, c *StringConstraint) error {
 			return err
 		}
 		fmt.Fprintf(out, ",)")
+	}
+
+	if c.HasDefault() {
+		def := c.DefaultValue()
+		switch def.(type) {
+		case string:
+		default:
+			return errors.New("default value must be a string")
+		}
+		fmt.Fprintf(out, ".Default(%s)", strconv.Quote(def.(string)))
 	}
 
 	return nil

@@ -167,6 +167,16 @@ func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
 	return keys, nil
 }
 
+func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface{}) error {
+	switch rv.Kind() {
+	case reflect.Map:
+		rv.SetMapIndex(reflect.ValueOf(pname), reflect.ValueOf(val))
+		return nil
+	default:
+		return errors.New("setProp: don't know what to do with '" + rv.Kind().String() + "'")
+	}
+}
+
 func (o *ObjectConstraint) getProp(rv reflect.Value, pname string) reflect.Value {
 	switch rv.Kind() {
 	case reflect.Map:
@@ -247,6 +257,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 			if pdebug.Enabled {
 				pdebug.Printf("Property '%s' does not exist", pname)
 			}
+
 			if o.IsPropRequired(pname) { // required, and not present.
 				return errors.New("object property '" + pname + "' is required")
 			}
@@ -254,8 +265,14 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 			// At this point we know that the property was not present
 			// and that this field was indeed not required.
 			if c.HasDefault() {
+				if pdebug.Enabled {
+					pdebug.Printf("object property '" + pname + "' has default")
+				}
 				// We have default
 				dv := c.DefaultValue()
+				if err := o.setProp(rv, pname, dv); err != nil {
+					return errors.New("failed to set default value for property '" + pname + "': " + err.Error())
+				}
 				pval = reflect.ValueOf(dv)
 			}
 
