@@ -114,7 +114,7 @@ func (sc *StringConstraint) Validate(v interface{}) (err error) {
 
 	if rx := sc.regexp; rx != nil {
 		if pdebug.Enabled {
-			pdebug.Printf("Checking Regexp")
+			pdebug.Printf("Checking Regexp (rs: %s, target: %s)", rx.String(), str)
 		}
 		if !rx.MatchString(str) {
 			return errors.New("string does not match regular expression")
