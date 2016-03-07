@@ -99,6 +99,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 	}
 
 	// Now dump the validators
+	sort.Sort(JSValSlice(validators))
 	for _, v := range validators {
 		fmt.Fprintf(&buf, "\n%s = ", v.Name)
 		if err := generateCode(&ctx, &buf, v); err != nil {

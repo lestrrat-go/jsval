@@ -24,6 +24,10 @@ type JSVal struct {
 	resolver *jsref.Resolver
 }
 
+// JSValSlice is a list of JSVal validators. This exists in order to define
+// methods to satisfy the `sort.Interface` interface
+type JSValSlice []*JSVal
+
 // Constraint is an object that know how to validate
 // individual types of input
 type Constraint interface {
