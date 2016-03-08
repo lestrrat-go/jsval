@@ -8,6 +8,16 @@ import (
 	"github.com/lestrrat/go-pdebug"
 )
 
+type getPropValuer interface {
+	// Given a JSON property name, return the actual field value
+	GetPropValue(string) (interface{}, error)
+}
+
+type getPropNameser interface {
+	// Given a lst of JSON property names
+	GetPropNames() ([]string, error)
+}
+
 // Object creates a new ObjectConstraint
 func Object() *ObjectConstraint {
 	return &ObjectConstraint{
@@ -159,6 +169,13 @@ func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
 			keys[i] = v.String()
 		}
 	case reflect.Struct:
+		if gpv, ok := rv.Interface().(getPropNameser); ok {
+			pv, err := gpv.GetPropNames()
+			if err == nil {
+				return pv, nil
+			}
+		}
+
 		fetcher := o.FieldNamesFromStruct
 		if fetcher == nil {
 			fetcher = DefaultFieldNamesFromStruct
@@ -191,6 +208,15 @@ func (o *ObjectConstraint) getProp(rv reflect.Value, pname string) reflect.Value
 		pv := reflect.ValueOf(pname)
 		return rv.MapIndex(pv)
 	case reflect.Struct:
+		// This guy knows how to grab the value, given a name. Use that
+		if gpv, ok := rv.Interface().(getPropValuer); ok {
+			pv, err := gpv.GetPropValue(pname)
+			if err == nil {
+				return reflect.ValueOf(pv)
+			}
+		}
+
+		// Otherwise, try the default way
 		fetcher := o.FieldNameFromName
 		if fetcher == nil {
 			fetcher = DefaultFieldNameFromName
