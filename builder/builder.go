@@ -80,6 +80,11 @@ func (b *Builder) BuildWithCtx(s *schema.Schema, jsctx interface{}) (v *jsval.JS
 		return nil, err
 	}
 
+	if _, ok := ctx.R["#"]; ok {
+		v.SetReference("#", c)
+		delete(ctx.R, "#")
+	}
+
 	// Now, resolve references that were used in the schema
 	if len(ctx.R) > 0 {
 		if pdebug.Enabled {
@@ -91,44 +96,59 @@ func (b *Builder) BuildWithCtx(s *schema.Schema, jsctx interface{}) (v *jsval.JS
 
 		r := jsref.New()
 		for ref := range ctx.R {
-			if pdebug.Enabled {
-				pdebug.Printf("Building constraints for reference '%s'", ref)
-			}
-
-			if ref == "#" {
-				if pdebug.Enabled {
-					pdebug.Printf("'%s' resolves to the main schema", ref)
-				}
-				v.SetReference(ref, c)
-				continue
-			}
-
-			thing, err := r.Resolve(jsctx, ref)
-			if err != nil {
+			if err := compileReferences(&ctx, r, v, ref, jsctx); err != nil {
 				return nil, err
 			}
+		}
+	}
+	v.SetRoot(c)
+	return v, nil
+}
 
-			var s1 *schema.Schema
-			switch thing.(type) {
-			case *schema.Schema:
-				s1 = thing.(*schema.Schema)
-			case map[string]interface{}:
-				s1 = schema.New()
-				if err := s1.Extract(thing.(map[string]interface{})); err != nil {
-					return nil, err
-				}
-			}
+func compileReferences(ctx *buildctx, r *jsref.Resolver, v *jsval.JSVal, ref string, jsctx interface{}) error {
+	if _, err := v.GetReference(ref); err == nil {
+		if pdebug.Enabled {
+			pdebug.Printf("Already resolved constraints for reference '%s'", ref)
+		}
+		return nil
+	}
 
-			c1, err := buildFromSchema(&ctx, s1)
-			if err != nil {
-				return nil, err
-			}
-			v.SetReference(ref, c1)
+	if pdebug.Enabled {
+		pdebug.Printf("Building constraints for reference '%s'", ref)
+	}
+
+	thing, err := r.Resolve(jsctx, ref)
+	if err != nil {
+		return err
+	}
+
+	if pdebug.Enabled {
+		pdebug.Printf("'%s' resolves to the main schema", ref)
+	}
+
+	var s1 *schema.Schema
+	switch thing.(type) {
+	case *schema.Schema:
+		s1 = thing.(*schema.Schema)
+	case map[string]interface{}:
+		s1 = schema.New()
+		if err := s1.Extract(thing.(map[string]interface{})); err != nil {
+			return err
 		}
 	}
 
-	v.SetRoot(c)
-	return v, nil
+	c1, err := buildFromSchema(ctx, s1)
+	if err != nil {
+		return err
+	}
+
+	v.SetReference(ref, c1)
+	for ref := range ctx.R {
+		if err := compileReferences(ctx, r, v, ref, jsctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func buildFromSchema(ctx *buildctx, s *schema.Schema) (jsval.Constraint, error) {
