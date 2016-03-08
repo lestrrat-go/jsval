@@ -29,7 +29,12 @@ func TestObject(t *testing.T) {
         "type": "string"
       }
     }
-  }
+  },
+	"patternProperties": {
+		"name#[a-z]+": {
+			"type": "string"
+		}
+	}
 }`
 
 	s, err := schema.Read(strings.NewReader(src))
@@ -50,6 +55,8 @@ func TestObject(t *testing.T) {
 		map[string]interface{}{
 			"tags": []interface{}{ 1, "foo", false },
 		},
+		map[string]interface{}{"name": "ハロー、ワールド"},
+		map[string]interface{}{"foo#ja": "フー！"},
 	}
 	for _, input := range data {
 		t.Logf("Testing %#v (should FAIL)", input)
@@ -61,6 +68,7 @@ func TestObject(t *testing.T) {
 	data = []interface{}{
 		map[string]interface{}{"name": "world"},
 		map[string]interface{}{"tags": []interface{}{"foo", "bar", "baz"}},
+		map[string]interface{}{"name#ja": "ハロー、ワールド"},
 	}
 	for _, input := range data {
 		t.Logf("Testing %#v (should PASS)", input)

@@ -407,6 +407,27 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 		fmt.Fprint(out, ",\n)")
 	}
 
+	// patternProperties is a bit tricky, because the keys are
+	// Regexp objects, and they don't have a sort.Regexp available
+	// for us. It's easy to write one, but we'd have to stringify them
+	// anyways, so we might as well just create a temporary container
+	// with strings as keys
+	ppmap := make(map[string]Constraint)
+	ppnames := make([]string, 0, len(c.patternProperties))
+	for rx, ppc := range c.patternProperties {
+		rxs := rx.String()
+		ppmap[rxs] = ppc
+		ppnames = append(ppnames, rxs)
+	}
+	sort.Strings(ppnames)
+	for _, ppname := range ppnames {
+		fmt.Fprintf(out, ".\nPatternPropertiesString(\n%s,\n", strconv.Quote(ppname))
+		if err := generateCode(ctx, out, ppmap[ppname]); err != nil {
+			return err
+		}
+		fmt.Fprint(out, ",\n)")
+	}
+
 	if m := c.propdeps; len(m) > 0 {
 		for from, deplist := range m {
 			for _, to := range deplist {

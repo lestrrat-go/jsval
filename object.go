@@ -84,6 +84,14 @@ func (o *ObjectConstraint) PatternProperties(key *regexp.Regexp, c Constraint) *
 	return o
 }
 
+// PatternPropertiesString is the same as PatternProperties, but takes
+// a string representing a regular expression. If the regular expression
+// cannot be compiled, a panic occurs.
+func (o *ObjectConstraint) PatternPropertiesString(key string, c Constraint) *ObjectConstraint {
+	rx := regexp.MustCompile(key)
+	return o.PatternProperties(rx, c)
+}
+
 // PropDependency specifies properties that must be present when
 // `from` is present.
 func (o *ObjectConstraint) PropDependency(from string, to ...string) *ObjectConstraint {
@@ -290,8 +298,14 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 	}
 
 	for pat, c := range o.patternProperties {
+		if pdebug.Enabled {
+			pdebug.Printf("Checking patternProperty '%s'", pat.String())
+		}
 		for pname := range premain {
 			if !pat.MatchString(pname) {
+				if pdebug.Enabled {
+					pdebug.Printf("Property '%s' does not match pattern...", pname)
+				}
 				continue
 			}
 			// No need to check if this pname exists, as we're taking
