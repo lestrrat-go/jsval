@@ -308,6 +308,9 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 				}
 				continue
 			}
+			if pdebug.Enabled {
+				pdebug.Printf("Property '%s' matches!", pname)
+			}
 			// No need to check if this pname exists, as we're taking
 			// this from "premain"
 			pval := o.getProp(rv, pname)
