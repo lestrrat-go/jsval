@@ -46,7 +46,7 @@ func (sc *StringConstraint) Validate(v interface{}) (err error) {
 	switch rv.Kind() {
 	case reflect.String:
 	default:
-		return errors.New("value is not a string")
+		return errors.New("value is not a string (Kind: " + rv.Kind().String() + ")")
 	}
 
 	str := rv.String()

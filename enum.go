@@ -20,14 +20,8 @@ func (c *EnumConstraint) Enum(v ...interface{}) *EnumConstraint {
 // Validate validates the value against the list of enumerations
 func (c *EnumConstraint) Validate(v interface{}) (err error) {
 	if pdebug.Enabled {
-		g := pdebug.IPrintf("START EnumConstraint.Validate")
-		defer func() {
-			if err == nil {
-				g.IRelease("END EnumConstraint.Validate (PASS)")
-			} else {
-				g.IRelease("END EnumConstraint.Validate (FAIL): %s", err)
-			}
-		}()
+		g := pdebug.Marker("EnumConstraint.Validate (%s)", v).BindError(&err)
+		defer g.End()
 	}
 	for _, e := range c.enums {
 		if e == v {
