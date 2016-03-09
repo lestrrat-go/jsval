@@ -263,8 +263,20 @@ func generateIntegerCode(ctx *genctx, out io.Writer, c *IntegerConstraint) error
 		fmt.Fprintf(out, ".Minimum(%d)", int(c.minimum))
 	}
 
+	if c.exclusiveMinimum {
+		fmt.Fprintf(out, ".ExclusiveMinimum(true)")
+	}
+
 	if c.applyMaximum {
 		fmt.Fprintf(out, ".Maximum(%d)", int(c.maximum))
+	}
+
+	if c.exclusiveMaximum {
+		fmt.Fprintf(out, ".ExclusiveMaximum(true)")
+	}
+
+	if c.HasDefault() {
+		fmt.Fprintf(out, ".Default(%d)", int(c.DefaultValue().(float64)))
 	}
 
 	return nil
