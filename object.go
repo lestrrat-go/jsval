@@ -192,10 +192,32 @@ func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
 	return keys, nil
 }
 
+type setPropValuer interface {
+	SetPropValue(string, interface{}) error
+}
+var spvType = reflect.TypeOf((*setPropValuer)(nil)).Elem()
+
 func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface{}) error {
 	switch rv.Kind() {
 	case reflect.Map:
 		rv.SetMapIndex(reflect.ValueOf(pname), reflect.ValueOf(val))
+		return nil
+	case reflect.Struct:
+		spvm := rv.MethodByName("SetPropValue")
+		if spvm != zeroval {
+			out := spvm.Call([]reflect.Value{reflect.ValueOf(pname), reflect.ValueOf(val)})
+			if !out[0].IsNil() {
+				return out[0].Interface().(error)
+			}
+			return nil
+		}
+
+		f := o.getProp(rv, pname)
+		if f == zeroval {
+			return errors.New("setProp: could not find field '" + pname  + "'")
+		}
+
+		f.Set(reflect.ValueOf(val))
 		return nil
 	default:
 		return errors.New("setProp: don't know what to do with '" + rv.Kind().String() + "'")
@@ -287,7 +309,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 		}
 
 		pval := o.getProp(rv, pname)
-		if pval == zeroval {
+		if pval == zeroval || reflect.Zero(pval.Type()).Interface() == pval.Interface() {
 			if pdebug.Enabled {
 				pdebug.Printf("Property '%s' does not exist", pname)
 			}
