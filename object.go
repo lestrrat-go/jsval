@@ -329,7 +329,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 		switch {
 		case pval == zeroval:
 			// If we got a zeroval, we're done for.
-		case pval.CanAddr() && pval.Type().Implements(maybeif) || reflect.PtrTo(pval.Type()).Implements(maybeif):
+		case pval.Type().Implements(maybeif) || reflect.PtrTo(pval.Type()).Implements(maybeif):
 			// If we have a Maybe value, we check the Valid() flag
 			mv := pval.MethodByName("Valid")
 			out := mv.Call(nil)
