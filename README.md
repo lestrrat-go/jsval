@@ -134,6 +134,25 @@ against the `positiveInteger` schema:
 }
 ```
 
+# Tricks
+
+## Specifying structs with values that may or may not be initialized
+
+With maps, it's easy to check if a property exists. But if you are validating a struct,
+however, all of the fields exist all the time, and you basically cannot detect if you
+have a missing field to apply defaults, etc.
+
+For such cases you should use the `Maybe` interface provided in this package:
+
+```go
+type Foo struct {
+  Name MaybeString `json:"name"`
+}
+```
+
+This will declare the value as "optional", and the JSVal validation mechanism does
+the correct thing to process this field.
+
 # TODO
 
 * More complete coverage of JSON Schema. Many validation statements are still not implmented (Please file issues if you find any!)

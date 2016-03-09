@@ -153,6 +153,10 @@ func (o *ObjectConstraint) GetSchemaDependency(from string) Constraint {
 	return c
 }
 
+var structInfoRegistry = StructInfoRegistry{
+	registry: make(map[reflect.Type]StructInfo),
+}
+
 // getProps return all of the property names for this object.
 // XXX Map keys can be something other than strings, but
 // we can't really allow it?
@@ -176,17 +180,14 @@ func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
 			}
 		}
 
-		fetcher := o.FieldNamesFromStruct
-		if fetcher == nil {
-			fetcher = DefaultFieldNamesFromStruct
+		si, ok := structInfoRegistry.Lookup(rv.Type())
+		if !ok {
+			si = structInfoRegistry.Register(rv.Type())
 		}
-		if keys = fetcher(rv); keys == nil {
-			// Can't happen, because we check for reflect.Struct,
-			// but for completeness
-			return nil, errors.New("panic: can only handle structs")
-		}
+
+		return si.PropNames(rv), nil
 	default:
-		return nil, errors.New("cannot get property names from this value")
+		return nil, errors.New("cannot get property names from this value (Kind: " + rv.Kind().String() + ")")
 	}
 
 	return keys, nil
@@ -195,9 +196,11 @@ func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
 type setPropValuer interface {
 	SetPropValue(string, interface{}) error
 }
+
 var spvType = reflect.TypeOf((*setPropValuer)(nil)).Elem()
 
 func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface{}) error {
+	pdebug.Printf("setProp %s", pname)
 	switch rv.Kind() {
 	case reflect.Map:
 		rv.SetMapIndex(reflect.ValueOf(pname), reflect.ValueOf(val))
@@ -214,7 +217,19 @@ func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface
 
 		f := o.getProp(rv, pname)
 		if f == zeroval {
-			return errors.New("setProp: could not find field '" + pname  + "'")
+			return errors.New("setProp: could not find field '" + pname + "'")
+		}
+
+		// Is this a Maybe value? If so, we should use its Set() method
+		switch {
+		case f.Type().Implements(maybeif):
+			mv := f.MethodByName("Set")
+			mv.Call([]reflect.Value{reflect.ValueOf(val)})
+			return nil
+		case f.CanAddr() && f.Addr().Type().Implements(maybeif):
+			mv := f.Addr().MethodByName("Set")
+			mv.Call([]reflect.Value{reflect.ValueOf(val)})
+			return nil
 		}
 
 		f.Set(reflect.ValueOf(val))
@@ -238,13 +253,16 @@ func (o *ObjectConstraint) getProp(rv reflect.Value, pname string) reflect.Value
 			}
 		}
 
-		// Otherwise, try the default way
-		fetcher := o.FieldNameFromName
-		if fetcher == nil {
-			fetcher = DefaultFieldNameFromName
+		si, ok := structInfoRegistry.Lookup(rv.Type())
+		if !ok {
+			si = structInfoRegistry.Register(rv.Type())
 		}
-		fn := fetcher(rv, pname)
-		if fn == "" {
+
+		fn, ok := si.FieldName(pname)
+		if !ok {
+			if pdebug.Enabled {
+				pdebug.Printf("Could not resolve name '%s'", pname)
+			}
 			return zeroval
 		}
 		return rv.FieldByName(fn)
@@ -309,7 +327,28 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 		}
 
 		pval := o.getProp(rv, pname)
-		if pval == zeroval || (pval.Type().Comparable() && reflect.Zero(pval.Type()).Interface() == pval.Interface()) {
+		propExists := false
+
+		switch {
+		case pval == zeroval:
+			// If we got a zeroval, we're done for.
+		case pval.Type().Implements(maybeif) || reflect.PtrTo(pval.Type()).Implements(maybeif):
+			// If we have a Maybe value, we check the Valid() flag
+			mv := pval.MethodByName("Valid")
+			out := mv.Call(nil)
+			if out[0].Bool() {
+				propExists = true
+				// Swap out pval to be the value pointed to by the Maybe value
+				mv = pval.MethodByName("Value")
+				out = mv.Call(nil)
+				pval = out[0]
+			}
+		default:
+			// Everything else, we have *something*
+			propExists = true
+		}
+
+		if !propExists {
 			if pdebug.Enabled {
 				pdebug.Printf("Property '%s' does not exist", pname)
 			}
@@ -374,7 +413,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 	if len(premain) > 0 {
 		c := o.additionalProperties
 		if c == nil {
-			return errors.New("additional items are not allowed")
+			return errors.New("additional properties are not allowed")
 		}
 
 		for pname := range premain {

@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/lestrrat/go-jsref"
-	"github.com/lestrrat/go-structinfo"
 )
 
 var zeroval = reflect.Value{}
@@ -103,17 +102,6 @@ type ArrayConstraint struct {
 	maxItems        int
 	uniqueItems     bool
 }
-
-// DefaultFieldNamesFromStruct is the function that gets used to
-// retrieve JSON names from a struct during validation
-var DefaultFieldNamesFromStruct = structinfo.JSONFieldsFromStruct
-
-// DefaultFieldNameFromName is the function that gets used to
-// retrieve field index for a JSON name in the given object
-var DefaultFieldNameFromName = structinfo.StructFieldFromJSONName
-
-// FieldNameFromNameFunc is the signature for FieldNameFromName
-type FieldNameFromNameFunc func(reflect.Value, string) string
 
 // ObjectConstraint implements a constraint to match against
 // various aspects of a Map-like structure.
