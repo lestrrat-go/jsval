@@ -221,12 +221,15 @@ func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface
 		}
 
 		// Is this a Maybe value? If so, we should use its Set() method
-		if f.CanAddr() {
-			if ptr := f.Addr(); ptr.Type().Implements(maybeif) {
-				mv := ptr.MethodByName("Set")
-				mv.Call([]reflect.Value{reflect.ValueOf(val)})
-				return nil
-			}
+		switch {
+		case f.Type().Implements(maybeif):
+			mv := f.MethodByName("Set")
+			mv.Call([]reflect.Value{reflect.ValueOf(val)})
+			return nil
+		case f.CanAddr() && f.Addr().Type().Implements(maybeif):
+			mv := f.Addr().MethodByName("Set")
+			mv.Call([]reflect.Value{reflect.ValueOf(val)})
+			return nil
 		}
 
 		f.Set(reflect.ValueOf(val))
