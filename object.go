@@ -309,7 +309,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 		}
 
 		pval := o.getProp(rv, pname)
-		if pval == zeroval || reflect.Zero(pval.Type()).Interface() == pval.Interface() {
+		if pval == zeroval || (pval.Type().Comparable() && reflect.Zero(pval.Type()).Interface() == pval.Interface()) {
 			if pdebug.Enabled {
 				pdebug.Printf("Property '%s' does not exist", pname)
 			}
