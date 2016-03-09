@@ -155,6 +155,13 @@ func Integer() *IntegerConstraint {
 	return c
 }
 
+// Default specifies the default value for the given value
+func (ic *IntegerConstraint) Default(v interface{}) *IntegerConstraint {
+	ic.NumberConstraint.Default(v)
+	return ic
+}
+
+// Maximum sepcifies the maximum value that the constraint can allow
 // Maximum sepcifies the maximum value that the constraint can allow
 func (ic *IntegerConstraint) Maximum(n float64) *IntegerConstraint {
 	ic.applyMaximum = true
