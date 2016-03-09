@@ -109,11 +109,6 @@ func (r *StructInfoRegistry) Register(t reflect.Type) StructInfo {
 	return si
 }
 
-type MaybeCheck interface {
-	Valid() bool
-	Value() interface{}
-}
-
 var maybeif = reflect.TypeOf((*Maybe)(nil)).Elem()
 
 func extract(t reflect.Type) map[string]PropInfo {
