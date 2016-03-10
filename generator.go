@@ -125,8 +125,13 @@ type genctx struct {
 	vname    string
 }
 
-func generateNilCode(ctx *genctx, out io.Writer, c emptyConstraint) error {
+func generateEmptyCode(ctx *genctx, out io.Writer, c emptyConstraint) error {
 	fmt.Fprintf(out, "%s.EmptyConstraint", ctx.pkgname)
+	return nil
+}
+
+func generateNullCode(ctx *genctx, out io.Writer, c nullConstraint) error {
+	fmt.Fprintf(out, "%s.NullConstraint", ctx.pkgname)
 	return nil
 }
 func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
@@ -162,8 +167,12 @@ func generateCode(ctx *genctx, out io.Writer, c interface {
 	buf := &bytes.Buffer{}
 
 	switch c.(type) {
+	case nullConstraint:
+		if err := generateNullCode(ctx, buf, c.(nullConstraint)); err != nil {
+			return err
+		}
 	case emptyConstraint:
-		if err := generateNilCode(ctx, buf, c.(emptyConstraint)); err != nil {
+		if err := generateEmptyCode(ctx, buf, c.(emptyConstraint)); err != nil {
 			return err
 		}
 	case *JSVal:
@@ -231,7 +240,7 @@ func generateReferenceCode(ctx *genctx, out io.Writer, c *ReferenceConstraint) e
 
 func generateComboCode(ctx *genctx, out io.Writer, name string, clist []Constraint) error {
 	if len(clist) == 0 {
-		return generateNilCode(ctx, out, EmptyConstraint)
+		return generateEmptyCode(ctx, out, EmptyConstraint)
 	}
 	fmt.Fprintf(out, "%s.%s()", ctx.pkgname, name)
 	for _, c1 := range clist {
