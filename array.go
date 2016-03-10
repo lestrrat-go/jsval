@@ -34,7 +34,7 @@ func (c *ArrayConstraint) Validate(v interface{}) (err error) {
 	switch rv.Kind() {
 	case reflect.Slice:
 	default:
-		return errors.New("value must be a slice")
+		return errors.New("value must be a slice (was: " + rv.Type().String() + ")")
 	}
 
 	l := rv.Len()
