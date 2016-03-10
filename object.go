@@ -193,6 +193,34 @@ func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
 	return keys, nil
 }
 
+var (
+	maybefloatT = reflect.TypeOf(MaybeFloat{})
+	maybeintT = reflect.TypeOf(MaybeInt{})
+	intT = reflect.TypeOf(int64(0))
+	floatT = reflect.TypeOf(float64(0))
+)
+
+func coerceValue(v interface{}, t reflect.Type) reflect.Value {
+	vv := reflect.ValueOf(v)
+	switch vv.Kind() {
+	case reflect.Interface:
+		vv = vv.Elem()
+	}
+
+	// For known Maybe types, we should do our best, too
+	switch {
+	case t == maybefloatT:
+		t = floatT
+	case t == maybeintT:
+		t = intT
+	}
+
+	if vv.Type().ConvertibleTo(t) {
+		return vv.Convert(t)
+	}
+	return vv
+}
+
 type setPropValuer interface {
 	SetPropValue(string, interface{}) error
 }
@@ -200,7 +228,6 @@ type setPropValuer interface {
 var spvType = reflect.TypeOf((*setPropValuer)(nil)).Elem()
 
 func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface{}) error {
-	pdebug.Printf("setProp %s", pname)
 	switch rv.Kind() {
 	case reflect.Map:
 		rv.SetMapIndex(reflect.ValueOf(pname), reflect.ValueOf(val))
@@ -220,19 +247,28 @@ func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface
 			return errors.New("setProp: could not find field '" + pname + "'")
 		}
 
+		// Usability: If you specify `Default(10)` on an int64 value,
+		// it doesn't work. But these values are compatible. We should
+		// do our best to align them
+		dv := coerceValue(val, f.Type())
+
 		// Is this a Maybe value? If so, we should use its Set() method
+		var mv reflect.Value
 		switch {
 		case f.Type().Implements(maybeif):
-			mv := f.MethodByName("Set")
-			mv.Call([]reflect.Value{reflect.ValueOf(val)})
-			return nil
+			mv = f.MethodByName("Set")
 		case f.CanAddr() && f.Addr().Type().Implements(maybeif):
-			mv := f.Addr().MethodByName("Set")
-			mv.Call([]reflect.Value{reflect.ValueOf(val)})
-			return nil
+			mv = f.Addr().MethodByName("Set")
 		}
 
-		f.Set(reflect.ValueOf(val))
+		if mv != zeroval {
+			out := mv.Call([]reflect.Value{dv})
+			if !out[0].IsNil() {
+				return out[0].Interface().(error)
+			}
+			return nil
+		}
+		f.Set(dv)
 		return nil
 	default:
 		return errors.New("setProp: don't know what to do with '" + rv.Kind().String() + "'")
@@ -365,6 +401,7 @@ func (o *ObjectConstraint) Validate(v interface{}) (err error) {
 				}
 				// We have default
 				dv := c.DefaultValue()
+
 				if err := o.setProp(rv, pname, dv); err != nil {
 					return errors.New("failed to set default value for property '" + pname + "': " + err.Error())
 				}
