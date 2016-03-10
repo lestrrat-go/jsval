@@ -1,10 +1,11 @@
 # go-jsval
 
+Validator toolset, with code generation from JSON Schema
+
 [![Build Status](https://travis-ci.org/lestrrat/go-jsval.svg?branch=master)](https://travis-ci.org/lestrrat/go-jsval)
 
 [![GoDoc](https://godoc.org/github.com/lestrrat/go-jsval?status.svg)](https://godoc.org/github.com/lestrrat/go-jsval)
 
-Validator toolset, aimed to be used with JSON Schema
 
 # Description
 
