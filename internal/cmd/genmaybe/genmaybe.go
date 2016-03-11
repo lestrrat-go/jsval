@@ -61,6 +61,7 @@ func main() {
 	types := map[string]string{
 		"String": "string",
 		"Int":    "int64",
+		"Uint":   "uint64",
 		"Float":  "float64",
 		"Bool":   "bool",
 		"Time":   "time.Time",
@@ -82,14 +83,58 @@ func main() {
 		fmt.Fprintf(&buf, "\n%s %s", t, bt)
 		buf.WriteString("\n}")
 		fmt.Fprintf(&buf, "\n\nfunc (v *Maybe%s) Set(x interface{}) error {", t)
-		fmt.Fprintf(&buf, "\ns, ok := x.(%s)", bt)
-		buf.WriteString("\nif !ok {")
-		buf.WriteString("\nreturn ErrInvalidMaybeValue")
-		buf.WriteString("\n}")
-		buf.WriteString("\nv.ValidFlag = true")
-		fmt.Fprintf(&buf, "\nv.%s = s", t)
-		buf.WriteString("\nreturn nil")
-		buf.WriteString("\n}")
+		// Numeric types are special, because they can be converted
+		switch t {
+		case "Int":
+			buf.WriteString("\nswitch x.(type) {")
+			for _, ct := range []string{"int", "int8", "int16", "int32"} {
+				fmt.Fprintf(&buf, "\ncase %s:", ct)
+				fmt.Fprintf(&buf, "\nv.%s = int64(x.(%s))", t, ct)
+			}
+			buf.WriteString("\ncase int64:")
+			fmt.Fprintf(&buf, "\nv.%s = x.(int64)", t)
+			buf.WriteString("\ndefault:")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\n}")
+			buf.WriteString("\nv.ValidFlag = true")
+			buf.WriteString("\nreturn nil")
+			buf.WriteString("\n}")
+		case "Uint":
+			buf.WriteString("\nswitch x.(type) {")
+			for _, ct := range []string{"uint", "uint8", "uint16", "uint32"} {
+				fmt.Fprintf(&buf, "\ncase %s:", ct)
+				fmt.Fprintf(&buf, "\nv.%s = uint64(x.(%s))", t, ct)
+			}
+			buf.WriteString("\ncase uint64:")
+			fmt.Fprintf(&buf, "\nv.%s = x.(uint64)", t)
+			buf.WriteString("\ndefault:")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\n}")
+			buf.WriteString("\nv.ValidFlag = true")
+			buf.WriteString("\nreturn nil")
+			buf.WriteString("\n}")
+		case "Float":
+			buf.WriteString("\nswitch x.(type) {")
+			buf.WriteString("\ncase float32:")
+			fmt.Fprintf(&buf, "\nv.%s = float64(x.(float32))", t)
+			buf.WriteString("\ncase float64:")
+			fmt.Fprintf(&buf, "\nv.%s = x.(float64)", t)
+			buf.WriteString("\ndefault:")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\n}")
+			buf.WriteString("\nv.ValidFlag = true")
+			buf.WriteString("\nreturn nil")
+			buf.WriteString("\n}")
+		default:
+			fmt.Fprintf(&buf, "\ns, ok := x.(%s)", bt)
+			buf.WriteString("\nif !ok {")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\n}")
+			buf.WriteString("\nv.ValidFlag = true")
+			fmt.Fprintf(&buf, "\nv.%s = s", t)
+			buf.WriteString("\nreturn nil")
+			buf.WriteString("\n}")
+		}
 		fmt.Fprintf(&buf, "\n\nfunc (v Maybe%s) Value() interface{} {", t)
 		fmt.Fprintf(&buf, "\nreturn v.%s", t)
 		buf.WriteString("\n}")

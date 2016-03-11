@@ -82,12 +82,15 @@ type MaybeFloat struct {
 }
 
 func (v *MaybeFloat) Set(x interface{}) error {
-	s, ok := x.(float64)
-	if !ok {
+	switch x.(type) {
+	case float32:
+		v.Float = float64(x.(float32))
+	case float64:
+		v.Float = x.(float64)
+	default:
 		return ErrInvalidMaybeValue
 	}
 	v.ValidFlag = true
-	v.Float = s
 	return nil
 }
 
@@ -113,12 +116,21 @@ type MaybeInt struct {
 }
 
 func (v *MaybeInt) Set(x interface{}) error {
-	s, ok := x.(int64)
-	if !ok {
+	switch x.(type) {
+	case int:
+		v.Int = int64(x.(int))
+	case int8:
+		v.Int = int64(x.(int8))
+	case int16:
+		v.Int = int64(x.(int16))
+	case int32:
+		v.Int = int64(x.(int32))
+	case int64:
+		v.Int = x.(int64)
+	default:
 		return ErrInvalidMaybeValue
 	}
 	v.ValidFlag = true
-	v.Int = s
 	return nil
 }
 
@@ -194,6 +206,46 @@ func (v MaybeTime) MarshalJSON() ([]byte, error) {
 
 func (v *MaybeTime) UnmarshalJSON(data []byte) error {
 	var in time.Time
+	if err := json.Unmarshal(data, &in); err != nil {
+		return err
+	}
+	return v.Set(in)
+}
+
+type MaybeUint struct {
+	ValidFlag
+	Uint uint64
+}
+
+func (v *MaybeUint) Set(x interface{}) error {
+	switch x.(type) {
+	case uint:
+		v.Uint = uint64(x.(uint))
+	case uint8:
+		v.Uint = uint64(x.(uint8))
+	case uint16:
+		v.Uint = uint64(x.(uint16))
+	case uint32:
+		v.Uint = uint64(x.(uint32))
+	case uint64:
+		v.Uint = x.(uint64)
+	default:
+		return ErrInvalidMaybeValue
+	}
+	v.ValidFlag = true
+	return nil
+}
+
+func (v MaybeUint) Value() interface{} {
+	return v.Uint
+}
+
+func (v MaybeUint) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.Uint)
+}
+
+func (v *MaybeUint) UnmarshalJSON(data []byte) error {
+	var in uint64
 	if err := json.Unmarshal(data, &in); err != nil {
 		return err
 	}

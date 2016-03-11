@@ -71,3 +71,15 @@ func TestMaybeString_EmptyDefault(t *testing.T) {
 		return
 	}
 }
+
+func TestMaybeInt(t *testing.T) {
+	var i jsval.MaybeInt
+
+	if !assert.NoError(t, i.Set(10), "const 10 can be set to MaybeInt (coersion takes place)") {
+		return
+	}
+
+	if !assert.Error(t, i.Set(10.0), "const 10.0 should be an error") {
+		return
+	}
+}
