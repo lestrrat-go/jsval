@@ -1,6 +1,10 @@
 package jsval
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/lestrrat/go-pdebug"
+)
 
 func (c *comboconstraint) Add(v Constraint) {
 	c.constraints = append(c.constraints, v)
@@ -10,7 +14,10 @@ func (c *comboconstraint) Constraints() []Constraint {
 	return c.constraints
 }
 
-func reduceCombined(cc interface{ Constraint; Constraints() []Constraint }) Constraint {
+func reduceCombined(cc interface {
+	Constraint
+	Constraints() []Constraint
+}) Constraint {
 	l := cc.Constraints()
 	if len(l) == 1 {
 		return l[0]
@@ -39,7 +46,11 @@ func (c *AnyConstraint) Add(c2 Constraint) *AnyConstraint {
 // For AnyConstraints, it will return success the moment
 // one child Constraint succeeds. It will return an error
 // if none of the child Constraints succeeds
-func (c *AnyConstraint) Validate(v interface{}) error {
+func (c *AnyConstraint) Validate(v interface{}) (err error) {
+	if pdebug.Enabled {
+		g := pdebug.Marker("AnyConstraint.Validate").BindError(&err)
+		defer g.End()
+	}
 	for _, celem := range c.constraints {
 		if err := celem.Validate(v); err == nil {
 			return nil
@@ -66,9 +77,14 @@ func (c *AllConstraint) Add(c2 Constraint) *AllConstraint {
 }
 
 // Validate validates the value against the input value.
-// For AllConstraints, it will only return success if 
+// For AllConstraints, it will only return success if
 // all of the child Constraints succeeded.
-func (c *AllConstraint) Validate(v interface{}) error {
+func (c *AllConstraint) Validate(v interface{}) (err error) {
+	if pdebug.Enabled {
+		g := pdebug.Marker("AllConstraint.Validate").BindError(&err)
+		defer g.End()
+	}
+
 	for _, celem := range c.constraints {
 		if err := celem.Validate(v); err != nil {
 			return err
@@ -97,7 +113,12 @@ func (c *OneOfConstraint) Add(c2 Constraint) *OneOfConstraint {
 // Validate validates the value against the input value.
 // For OneOfConstraints, it will return success only if
 // exactly 1 child Constraint succeeds.
-func (c *OneOfConstraint) Validate(v interface{}) error {
+func (c *OneOfConstraint) Validate(v interface{}) (err error) {
+	if pdebug.Enabled {
+		g := pdebug.Marker("OneOfConstraint.Validate").BindError(&err)
+		defer g.End()
+	}
+
 	count := 0
 	for _, celem := range c.constraints {
 		if err := celem.Validate(v); err == nil {
