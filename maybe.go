@@ -125,6 +125,8 @@ func (v *MaybeInt) Set(x interface{}) error {
 		v.Int = int64(x.(int16))
 	case int32:
 		v.Int = int64(x.(int32))
+	case float64:
+		v.Int = int64(x.(float64))
 	case int64:
 		v.Int = x.(int64)
 	default:
@@ -227,6 +229,8 @@ func (v *MaybeUint) Set(x interface{}) error {
 		v.Uint = uint64(x.(uint16))
 	case uint32:
 		v.Uint = uint64(x.(uint32))
+	case float64:
+		v.Uint = uint64(x.(float64))
 	case uint64:
 		v.Uint = x.(uint64)
 	default:

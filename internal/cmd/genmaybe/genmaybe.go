@@ -83,11 +83,13 @@ func main() {
 		fmt.Fprintf(&buf, "\n%s %s", t, bt)
 		buf.WriteString("\n}")
 		fmt.Fprintf(&buf, "\n\nfunc (v *Maybe%s) Set(x interface{}) error {", t)
-		// Numeric types are special, because they can be converted
+		// Numeric types are special, because they can be converted.
+		// float64 is included in the int/uint because JSON uses float64
+		// to express numeric values, and we work with a lot of JSON
 		switch t {
 		case "Int":
 			buf.WriteString("\nswitch x.(type) {")
-			for _, ct := range []string{"int", "int8", "int16", "int32"} {
+			for _, ct := range []string{"int", "int8", "int16", "int32", "float64"} {
 				fmt.Fprintf(&buf, "\ncase %s:", ct)
 				fmt.Fprintf(&buf, "\nv.%s = int64(x.(%s))", t, ct)
 			}
@@ -101,7 +103,7 @@ func main() {
 			buf.WriteString("\n}")
 		case "Uint":
 			buf.WriteString("\nswitch x.(type) {")
-			for _, ct := range []string{"uint", "uint8", "uint16", "uint32"} {
+			for _, ct := range []string{"uint", "uint8", "uint16", "uint32", "float64"} {
 				fmt.Fprintf(&buf, "\ncase %s:", ct)
 				fmt.Fprintf(&buf, "\nv.%s = uint64(x.(%s))", t, ct)
 			}
