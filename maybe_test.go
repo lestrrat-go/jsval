@@ -79,7 +79,7 @@ func TestMaybeInt(t *testing.T) {
 		return
 	}
 
-	if !assert.Error(t, i.Set(10.0), "const 10.0 should be an error") {
+	if !assert.NoError(t, i.Set(10.0), "const 10.0 can be set to MaybeInt (coersion takes place)") {
 		return
 	}
 }
