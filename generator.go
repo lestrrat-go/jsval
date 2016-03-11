@@ -94,7 +94,7 @@ func (g *Generator) Process(out io.Writer, validators ...*JSVal) error {
 		}
 
 		for _, rname := range refnames {
-			fmt.Fprintf(&buf, "\n%s.SetReference(`%s`, %s)", ctx.cmname, rname, ctx.refnames[rname])
+			fmt.Fprintf(&buf, "\n%s.SetReference(%s, %s)", ctx.cmname, strconv.Quote(rname), ctx.refnames[rname])
 		}
 	}
 
@@ -233,7 +233,7 @@ func generateCode(ctx *genctx, out io.Writer, c interface {
 }
 
 func generateReferenceCode(ctx *genctx, out io.Writer, c *ReferenceConstraint) error {
-	fmt.Fprintf(out, "%s.Reference(%s).RefersTo(`%s`)", ctx.pkgname, ctx.cmname, c.reference)
+	fmt.Fprintf(out, "%s.Reference(%s).RefersTo(%s)", ctx.pkgname, ctx.cmname, strconv.Quote(c.reference))
 
 	return nil
 }
@@ -356,7 +356,7 @@ func generateStringCode(ctx *genctx, out io.Writer, c *StringConstraint) error {
 	}
 
 	if rx := c.regexp; rx != nil {
-		fmt.Fprintf(out, ".RegexpString(`%s`)", rx.String())
+		fmt.Fprintf(out, ".RegexpString(%s)", strconv.Quote(rx.String()))
 	}
 
 	if enum := c.enums; enum != nil {
@@ -421,7 +421,7 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 	for _, pname := range pnames {
 		pdef := c.properties[pname]
 
-		fmt.Fprintf(out, ".\nAddProp(\n`%s`,\n", pname)
+		fmt.Fprintf(out, ".\nAddProp(\n%s,\n", strconv.Quote(pname))
 		if err := generateCode(ctx, out, pdef); err != nil {
 			return err
 		}
