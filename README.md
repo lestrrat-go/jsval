@@ -18,7 +18,7 @@ Read a schema file and create a validator using `jsval` command:
 
 ```shell
 jsval -s /path/to/schema.json -o validator.go
-jsval -s /path/to/hyperschema.json -o validator.go -p "#/links/0/schema" -p "#/links/1/schema" -p "#/links/2/schema"
+jsval -s /path/to/hyperschema.json -o validator.go -p "/links/0/schema" -p "/links/1/schema" -p "/links/2/schema"
 ```
 
 Read a schema file and create a validator programatically:
@@ -107,7 +107,7 @@ the document, you can use the `-p` argument to access a
 specific portion of a JSON document:
 
 ```
-jsval -s hyper.json -p "#/links/0" -p "#/lnks/1"
+jsval -s hyper.json -p "/links/0" -p "/lnks/1"
 ```
 
 This will generate a set of validators, with JSON references
