@@ -11,12 +11,31 @@ import (
 const preamble = `package jsval
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
+	"reflect"
 	"time"
 )
 
-var ErrInvalidMaybeValue = errors.New("invalid Maybe value")
+type ErrInvalidMaybeValue struct {
+	Value interface{}
+}
+
+func (e ErrInvalidMaybeValue) Error() string {
+	buf := bytes.Buffer{}
+	buf.WriteString("invalid Maybe value: ")
+	t := reflect.TypeOf(e.Value)
+	switch t {
+	case nil:
+		buf.WriteString("(nil)")
+	default:
+		buf.WriteByte('(')
+		buf.WriteString(t.String())
+		buf.WriteByte(')')
+	}
+
+	return buf.String()
+}
 
 // Maybe is an interface that can be used for struct fields which
 // want to differentiate between initialized and uninitialized state.
@@ -96,7 +115,7 @@ func main() {
 			buf.WriteString("\ncase int64:")
 			fmt.Fprintf(&buf, "\nv.%s = x.(int64)", t)
 			buf.WriteString("\ndefault:")
-			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue{Value: x}")
 			buf.WriteString("\n}")
 			buf.WriteString("\nv.ValidFlag = true")
 			buf.WriteString("\nreturn nil")
@@ -110,7 +129,7 @@ func main() {
 			buf.WriteString("\ncase uint64:")
 			fmt.Fprintf(&buf, "\nv.%s = x.(uint64)", t)
 			buf.WriteString("\ndefault:")
-			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue{Value: x}")
 			buf.WriteString("\n}")
 			buf.WriteString("\nv.ValidFlag = true")
 			buf.WriteString("\nreturn nil")
@@ -122,7 +141,7 @@ func main() {
 			buf.WriteString("\ncase float64:")
 			fmt.Fprintf(&buf, "\nv.%s = x.(float64)", t)
 			buf.WriteString("\ndefault:")
-			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue{Value: x}")
 			buf.WriteString("\n}")
 			buf.WriteString("\nv.ValidFlag = true")
 			buf.WriteString("\nreturn nil")
@@ -130,7 +149,7 @@ func main() {
 		default:
 			fmt.Fprintf(&buf, "\ns, ok := x.(%s)", bt)
 			buf.WriteString("\nif !ok {")
-			buf.WriteString("\nreturn ErrInvalidMaybeValue")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue{Value: x}")
 			buf.WriteString("\n}")
 			buf.WriteString("\nv.ValidFlag = true")
 			fmt.Fprintf(&buf, "\nv.%s = s", t)

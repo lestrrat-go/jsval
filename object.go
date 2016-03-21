@@ -195,9 +195,9 @@ func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
 
 var (
 	maybefloatT = reflect.TypeOf(MaybeFloat{})
-	maybeintT = reflect.TypeOf(MaybeInt{})
-	intT = reflect.TypeOf(int64(0))
-	floatT = reflect.TypeOf(float64(0))
+	maybeintT   = reflect.TypeOf(MaybeInt{})
+	intT        = reflect.TypeOf(int64(0))
+	floatT      = reflect.TypeOf(float64(0))
 )
 
 func coerceValue(v interface{}, t reflect.Type) reflect.Value {
@@ -259,16 +259,19 @@ func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface
 			mv = f.MethodByName("Set")
 		case f.CanAddr() && f.Addr().Type().Implements(maybeif):
 			mv = f.Addr().MethodByName("Set")
-		}
-
-		if mv != zeroval {
-			out := mv.Call([]reflect.Value{dv})
-			if !out[0].IsNil() {
-				return out[0].Interface().(error)
-			}
+		default:
+			f.Set(dv)
 			return nil
 		}
-		f.Set(dv)
+
+		if mv == zeroval {
+			return errors.New("setProp: could not get 'Set' method for value")
+		}
+
+		out := mv.Call([]reflect.Value{dv})
+		if !out[0].IsNil() {
+			return out[0].Interface().(error)
+		}
 		return nil
 	default:
 		return errors.New("setProp: don't know what to do with '" + rv.Kind().String() + "'")

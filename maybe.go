@@ -1,12 +1,31 @@
 package jsval
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
+	"reflect"
 	"time"
 )
 
-var ErrInvalidMaybeValue = errors.New("invalid Maybe value")
+type ErrInvalidMaybeValue struct {
+	Value interface{}
+}
+
+func (e ErrInvalidMaybeValue) Error() string {
+	buf := bytes.Buffer{}
+	buf.WriteString("invalid Maybe value: ")
+	t := reflect.TypeOf(e.Value)
+	switch t {
+	case nil:
+		buf.WriteString("(nil)")
+	default:
+		buf.WriteByte('(')
+		buf.WriteString(t.String())
+		buf.WriteByte(')')
+	}
+
+	return buf.String()
+}
 
 // Maybe is an interface that can be used for struct fields which
 // want to differentiate between initialized and uninitialized state.
@@ -53,7 +72,7 @@ type MaybeBool struct {
 func (v *MaybeBool) Set(x interface{}) error {
 	s, ok := x.(bool)
 	if !ok {
-		return ErrInvalidMaybeValue
+		return ErrInvalidMaybeValue{Value: x}
 	}
 	v.ValidFlag = true
 	v.Bool = s
@@ -88,7 +107,7 @@ func (v *MaybeFloat) Set(x interface{}) error {
 	case float64:
 		v.Float = x.(float64)
 	default:
-		return ErrInvalidMaybeValue
+		return ErrInvalidMaybeValue{Value: x}
 	}
 	v.ValidFlag = true
 	return nil
@@ -130,7 +149,7 @@ func (v *MaybeInt) Set(x interface{}) error {
 	case int64:
 		v.Int = x.(int64)
 	default:
-		return ErrInvalidMaybeValue
+		return ErrInvalidMaybeValue{Value: x}
 	}
 	v.ValidFlag = true
 	return nil
@@ -160,7 +179,7 @@ type MaybeString struct {
 func (v *MaybeString) Set(x interface{}) error {
 	s, ok := x.(string)
 	if !ok {
-		return ErrInvalidMaybeValue
+		return ErrInvalidMaybeValue{Value: x}
 	}
 	v.ValidFlag = true
 	v.String = s
@@ -191,7 +210,7 @@ type MaybeTime struct {
 func (v *MaybeTime) Set(x interface{}) error {
 	s, ok := x.(time.Time)
 	if !ok {
-		return ErrInvalidMaybeValue
+		return ErrInvalidMaybeValue{Value: x}
 	}
 	v.ValidFlag = true
 	v.Time = s
@@ -234,7 +253,7 @@ func (v *MaybeUint) Set(x interface{}) error {
 	case uint64:
 		v.Uint = x.(uint64)
 	default:
-		return ErrInvalidMaybeValue
+		return ErrInvalidMaybeValue{Value: x}
 	}
 	v.ValidFlag = true
 	return nil
