@@ -161,6 +161,11 @@ var structInfoRegistry = StructInfoRegistry{
 // XXX Map keys can be something other than strings, but
 // we can't really allow it?
 func (o *ObjectConstraint) getPropNames(rv reflect.Value) ([]string, error) {
+	switch rv.Kind() {
+	case reflect.Ptr, reflect.Interface:
+		rv = rv.Elem()
+	}
+
 	var keys []string
 	switch rv.Kind() {
 	case reflect.Map:
@@ -228,6 +233,11 @@ type setPropValuer interface {
 var spvType = reflect.TypeOf((*setPropValuer)(nil)).Elem()
 
 func (o *ObjectConstraint) setProp(rv reflect.Value, pname string, val interface{}) error {
+	switch rv.Kind() {
+	case reflect.Ptr, reflect.Interface:
+		rv = rv.Elem()
+	}
+
 	switch rv.Kind() {
 	case reflect.Map:
 		rv.SetMapIndex(reflect.ValueOf(pname), reflect.ValueOf(val))
