@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/lestrrat/go-pdebug"
@@ -56,7 +57,7 @@ func (sc *StringConstraint) Validate(v interface{}) (err error) {
 			pdebug.Printf("Checking MaxLength (%d)", sc.maxLength)
 		}
 		if ls > sc.maxLength {
-			return errors.New("string longer than maxLength")
+			return errors.New("string longer than maxLength " + strconv.Itoa(sc.maxLength))
 		}
 	}
 
@@ -65,11 +66,11 @@ func (sc *StringConstraint) Validate(v interface{}) (err error) {
 			pdebug.Printf("Checking MinLength (%d)", sc.minLength)
 		}
 		if ls < sc.minLength {
-			return errors.New("string shorter than minLength")
+			return errors.New("string shorter than minLength " + strconv.Itoa(sc.minLength))
 		}
 	}
 
-	switch sc.format{
+	switch sc.format {
 	case "datetime":
 		if _, err = time.Parse(time.RFC3339, str); err != nil {
 			return errors.New("invalid datetime")
