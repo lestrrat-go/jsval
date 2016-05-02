@@ -137,7 +137,9 @@ func extract(t reflect.Type) map[string]PropInfo {
 		// Inspect the field type. If this field implements the Maybe
 		// interface, we want to remember it
 		isMaybe := fv.Type.Implements(maybeif) || reflect.PtrTo(fv.Type).Implements(maybeif)
-		pdebug.Printf("Checking if field '%s' implements the Maybe interface -> %t", fv.Name, isMaybe)
+		if pdebug.Enabled {
+			pdebug.Printf("Checking if field '%s' implements the Maybe interface -> %t", fv.Name, isMaybe)
+		}
 
 		if tag == "" || tag[0] == ',' {
 			props[fv.Name] = PropInfo{
