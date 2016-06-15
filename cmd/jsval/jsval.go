@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -24,6 +25,7 @@ type options struct {
 	Schema  string   `short:"s" long:"schema" description:"the source JSON schema file"`
 	OutFile string   `short:"o" long:"outfile" description:"output file to generate"`
 	Pointer []string `short:"p" long:"ptr" description:"JSON pointer(s) within the document to create validators with"`
+	Prefix  string   `short:"P" long:"prefix" description:"prefix for validator name(s)"`
 }
 
 func _main() int {
@@ -94,6 +96,9 @@ func _main() int {
 		if err != nil {
 			log.Printf("%s", err)
 			return 1
+		}
+		if p := opts.Prefix; p != "" {
+			v.Name = fmt.Sprintf("%s%d", p, i)
 		}
 		validators[i] = v
 	}
