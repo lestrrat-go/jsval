@@ -12,6 +12,7 @@ import (
 	"github.com/lestrrat/go-jsschema"
 	"github.com/lestrrat/go-jsval"
 	"github.com/lestrrat/go-jsval/builder"
+	"github.com/lestrrat/go-jsval/server"
 )
 
 func main() {
@@ -20,16 +21,44 @@ func main() {
 
 // jsval schema.json [ref]
 // jsval hyper-schema.json -ptr /path/to/schema1 -ptr /path/to/schema2 -ptr /path/to/schema3
+// jsval server -listen :8080
 
-type options struct {
+func _main() int {
+	if len(os.Args) > 1 && os.Args[1] == "server" {
+		return _server()
+	}
+
+	return _cli()
+}
+
+type serverOptions struct {
+	Listen string  `short:"l" long:"listen" description:"the address to listen to" default:":8080"`
+}
+
+func _server() int {
+	var opts serverOptions
+	if _, err := flags.Parse(&opts); err != nil {
+		log.Printf("%s", err)
+		return 1
+	}
+
+	s := server.New()
+	if err := s.Run(opts.Listen); err != nil {
+		return 1
+	}
+
+	return 0
+}
+
+type cliOptions struct {
 	Schema  string   `short:"s" long:"schema" description:"the source JSON schema file"`
 	OutFile string   `short:"o" long:"outfile" description:"output file to generate"`
 	Pointer []string `short:"p" long:"ptr" description:"JSON pointer(s) within the document to create validators with"`
 	Prefix  string   `short:"P" long:"prefix" description:"prefix for validator name(s)"`
 }
 
-func _main() int {
-	var opts options
+func _cli() int {
+	var opts cliOptions
 	if _, err := flags.Parse(&opts); err != nil {
 		log.Printf("%s", err)
 		return 1
