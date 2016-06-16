@@ -135,6 +135,14 @@ against the `positiveInteger` schema:
 }
 ```
 
+## Run a playground server
+
+```
+jsval server -listen :8080
+```
+
+You can specify a JSON schema, and see what kind of validator gets generated.
+
 # Tricks
 
 ## Specifying structs with values that may or may not be initialized
