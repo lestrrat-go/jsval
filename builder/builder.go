@@ -52,6 +52,8 @@ func (b *Builder) Build(s *schema.Schema) (v *jsval.JSVal, err error) {
 
 // BuildWithCtx creates a new validator from the specified schema, using
 // the jsctx parameter as the context to resolve JSON References with.
+// If you expect your schema to contain JSON references to itself,
+// you will have to pass the context as a map with raw decoded JSON data
 func (b *Builder) BuildWithCtx(s *schema.Schema, jsctx interface{}) (v *jsval.JSVal, err error) {
 	if pdebug.Enabled {
 		g := pdebug.IPrintf("START Builder.BuildWithCtx")
