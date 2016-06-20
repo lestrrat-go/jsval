@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
+	"io"
 	"net/http"
 	"sync"
 
@@ -161,8 +162,19 @@ func (s *Server) httpIndex(ctx context.Context, w http.ResponseWriter, r *http.R
 func (s *Server) httpGenerateValidator(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	resp := make(map[string]interface{})
 
-	sc, err := schema.Read(r.Body)
+	buf := bytes.Buffer{}
+	io.Copy(&buf, r.Body)
+
+	sc, err := schema.Read(bytes.NewReader(buf.Bytes()))
 	if err != nil {
+		resp["success"] = false
+		resp["message"] = err.Error()
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
+	var m map[string]interface{}
+	if err := json.NewDecoder(bytes.NewReader(buf.Bytes())).Decode(&m); err != nil {
 		resp["success"] = false
 		resp["message"] = err.Error()
 		json.NewEncoder(w).Encode(resp)
@@ -170,7 +182,7 @@ func (s *Server) httpGenerateValidator(ctx context.Context, w http.ResponseWrite
 	}
 
 	b := builder.New()
-	v, err := b.Build(sc)
+	v, err := b.BuildWithCtx(sc, m)
 	if err != nil {
 		resp["success"] = false
 		resp["message"] = err.Error()
@@ -178,7 +190,7 @@ func (s *Server) httpGenerateValidator(ctx context.Context, w http.ResponseWrite
 		return
 	}
 
-	buf := bytes.Buffer{}
+	buf.Reset()
 	g := jsval.NewGenerator()
 	if err := g.Process(&buf, v); err != nil {
 		resp["success"] = false
