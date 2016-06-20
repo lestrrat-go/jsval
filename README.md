@@ -162,10 +162,6 @@ type Foo struct {
 This will declare the value as "optional", and the JSVal validation mechanism does
 the correct thing to process this field.
 
-# TODO
-
-* More complete coverage of JSON Schema. Many validation statements are still not implmented (Please file issues if you find any!)
-
 # References
 
 | Name                                                     | Notes                            |
