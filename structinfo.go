@@ -116,7 +116,7 @@ func extract(t reflect.Type) map[string]PropInfo {
 	for i := 0; i < t.NumField(); i++ {
 		fv := t.Field(i)
 		if fv.Anonymous {
-			info := extract(t)
+			info := extract(fv.Type)
 			for k, v := range info {
 				props[k] = v
 			}
