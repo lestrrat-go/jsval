@@ -52,7 +52,7 @@ func (sc *StringConstraint) Validate(v interface{}) (err error) {
 
 	str := rv.String()
 	ls := len(str)
-	if sc.maxLength > 0 {
+	if sc.maxLength > -1 {
 		if pdebug.Enabled {
 			pdebug.Printf("Checking MaxLength (%d)", sc.maxLength)
 		}
