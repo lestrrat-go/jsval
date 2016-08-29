@@ -5,6 +5,8 @@
 // of JSON Schema.
 package jsval
 
+import "github.com/pkg/errors"
+
 // New creates a new JSVal instance.
 func New() *JSVal {
 	return &JSVal{
@@ -15,7 +17,11 @@ func New() *JSVal {
 // Validate validates the input, and return an error
 // if any of the validations fail
 func (v *JSVal) Validate(x interface{}) error {
-	return v.root.Validate(x)
+	name := v.Name
+	if len(name) == 0 {
+		return errors.Wrapf(v.root.Validate(x), "validator %p failed", v)
+	}
+	return errors.Wrapf(v.root.Validate(x), "validator %s failed", name)
 }
 
 // SetName sets the name for the validator
