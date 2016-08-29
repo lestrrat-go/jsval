@@ -18,6 +18,12 @@ func (v *JSVal) Validate(x interface{}) error {
 	return v.root.Validate(x)
 }
 
+// SetName sets the name for the validator
+func (v *JSVal) SetName(s string) *JSVal {
+	v.Name = s
+	return v
+}
+
 // SetRoot sets the root Constraint object.
 func (v *JSVal) SetRoot(c Constraint) *JSVal {
 	v.root = c

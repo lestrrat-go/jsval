@@ -137,6 +137,7 @@ func generateNullCode(ctx *genctx, out io.Writer, c nullConstraint) error {
 func generateValidatorCode(ctx *genctx, out io.Writer, v *JSVal) error {
 	found := false
 	fmt.Fprintf(out, "%s.New()", ctx.pkgname)
+	fmt.Fprintf(out, ".\nSetName(%s)", strconv.Quote(v.Name))
 
 	if cmname := ctx.cmname; cmname != "" {
 		fmt.Fprintf(out, ".\nSetConstraintMap(%s)", cmname)
