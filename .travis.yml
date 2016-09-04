@@ -4,4 +4,4 @@ go:
     - 1.7
     - tip
 before_script: go generate
-script: .travis.sh
+script: ./.travis.sh
