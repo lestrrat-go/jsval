@@ -200,8 +200,8 @@ func init() {
 			"uniqueItems",
 			jsval.Boolean().Default(false),
 		).
-		PropDependency("exclusiveMinimum", "minimum").
-		PropDependency("exclusiveMaximum", "maximum")
+		PropDependency("exclusiveMaximum", "maximum").
+		PropDependency("exclusiveMinimum", "minimum")
 	R1 = jsval.Integer().Minimum(0)
 	R2 = jsval.All().
 		Add(

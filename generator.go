@@ -452,6 +452,7 @@ func generateObjectCode(ctx *genctx, out io.Writer, c *ObjectConstraint) error {
 
 	if m := c.propdeps; len(m) > 0 {
 		for from, deplist := range m {
+			sort.Strings(deplist)
 			for _, to := range deplist {
 				fmt.Fprintf(out, ".\nPropDependency(%s, %s)", strconv.Quote(from), strconv.Quote(to))
 			}
