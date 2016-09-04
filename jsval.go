@@ -1,4 +1,4 @@
-//go:generate go run internal/cmd/gentest/gentest.go schema.json > generated_validator_test.go
+//go:generate go run internal/cmd/gentest/gentest.go schema.json generated_validator_test.go
 
 // Package jsval implements an input validator, based on JSON Schema.
 // The main purpose is to validate JSON Schemas (see

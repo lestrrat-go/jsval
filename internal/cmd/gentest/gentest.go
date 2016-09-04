@@ -40,6 +40,13 @@ func _main() int {
 		return 1
 	}
 
-	io.Copy(os.Stdout, &out)
+	f, err := os.OpenFile(os.Args[2], os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Printf("%s", err)
+		return 1
+	}
+	defer f.Close()
+
+	io.Copy(f, &out)
 	return 0
 }
