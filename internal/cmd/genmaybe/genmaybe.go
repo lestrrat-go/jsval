@@ -5,8 +5,20 @@ import (
 	"fmt"
 	"go/format"
 	"log"
+	"os"
 	"sort"
+	"strconv"
 )
+
+const tPreamble = `package jsval_test
+
+import (
+	"testing"
+
+	"github.com/lestrrat/go-jsval"
+)
+
+`
 
 const preamble = `package jsval
 
@@ -92,7 +104,29 @@ func main() {
 	}
 	sort.Strings(typenames)
 
-	buf := bytes.Buffer{}
+	genMaybe(types, typenames, "maybe.go")
+	genMaybeTests(types, typenames, "maybe_gen_test.go")
+}
+
+func genMaybeTests(types map[string]string, typenames []string, fn string) {
+	var buf bytes.Buffer
+	buf.WriteString(tPreamble)
+	buf.WriteString("\n" + `func TestSanity(t *testing.T) {`)
+	for _, t := range typenames {
+		fmt.Fprintf(&buf, "\n"+`t.Run(%s, func(t *testing.T) {`,
+			strconv.Quote("Maybe"+t))
+		buf.WriteString("\nvar v jsval.Maybe")
+		fmt.Fprintf(&buf, "\nv = &jsval.Maybe%s{}", t)
+		buf.WriteString("\n_ = v")
+		buf.WriteString("\n})")
+	}
+	buf.WriteString("\n}")
+
+	writeFormatted(fn, buf.Bytes())
+}
+
+func genMaybe(types map[string]string, typenames []string, fn string) {
+	var buf bytes.Buffer
 	buf.WriteString(preamble)
 	for _, t := range typenames {
 		bt := types[t]
@@ -171,10 +205,22 @@ func main() {
 		buf.WriteString("\n}")
 	}
 
-	fsrc, err := format.Source(buf.Bytes())
+	writeFormatted(fn, buf.Bytes())
+}
+
+func writeFormatted(fn string, code []byte) {
+	fsrc, err := format.Source(code)
 	if err != nil {
 		log.Printf("Error formatting: %s", err)
+		return
 	}
 
-	fmt.Printf("%s", fsrc)
+	fh, err := os.OpenFile(fn, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Printf("Error opening file: %s", err)
+		return
+	}
+	defer fh.Close()
+
+	fh.Write(fsrc)
 }

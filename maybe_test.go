@@ -17,7 +17,7 @@ type TestMaybeStruct struct {
 func TestMaybeString_Empty(t *testing.T) {
 	const src = `{"age": 10}`
 
-	s := TestMaybeStruct{}
+	var s TestMaybeStruct
 	if !assert.NoError(t, json.NewDecoder(strings.NewReader(src)).Decode(&s), "Decode works") {
 		return
 	}
@@ -35,7 +35,7 @@ func TestMaybeString_Empty(t *testing.T) {
 func TestMaybeString_Populated(t *testing.T) {
 	const src = `{"age": 10, "name": "John Doe"}`
 
-	s := TestMaybeStruct{}
+	var s TestMaybeStruct
 	if !assert.NoError(t, json.NewDecoder(strings.NewReader(src)).Decode(&s), "Decode works") {
 		return
 	}
@@ -53,7 +53,7 @@ func TestMaybeString_Populated(t *testing.T) {
 func TestMaybeString_EmptyDefault(t *testing.T) {
 	const src = `{"age": 10}`
 
-	s := TestMaybeStruct{}
+	var s TestMaybeStruct
 	if !assert.NoError(t, json.NewDecoder(strings.NewReader(src)).Decode(&s), "Decode works") {
 		return
 	}
