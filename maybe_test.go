@@ -109,7 +109,8 @@ func TestMaybeTime(t *testing.T) {
 		return
 	}
 
-	if !assert.Equal(t, x, d) {
+	// Use epoch time for more unambiguous comparison
+	if !assert.Equal(t, x.Unix(), d.Unix()) {
 		return
 	}
 }
