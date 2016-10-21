@@ -180,6 +180,23 @@ func genMaybe(types map[string]string, typenames []string, fn string) {
 			buf.WriteString("\nv.ValidFlag = true")
 			buf.WriteString("\nreturn nil")
 			buf.WriteString("\n}")
+		case "Time":
+			buf.WriteString("\nswitch x.(type) {")
+			buf.WriteString("\ncase string:")
+			buf.WriteString("\ntv, err := time.Parse(time.RFC3339, x.(string))")
+			buf.WriteString("\nif err != nil {")
+			buf.WriteString("\nreturn err")
+			buf.WriteString("\n}")
+			buf.WriteString("\nv.ValidFlag = true")
+			buf.WriteString("\nv.Time = tv")
+			buf.WriteString("\ncase time.Time:")
+			buf.WriteString("\nv.ValidFlag = true")
+			buf.WriteString("\nv.Time = x.(time.Time)")
+			buf.WriteString("\ndefault:")
+			buf.WriteString("\nreturn ErrInvalidMaybeValue{Value: x}")
+			buf.WriteString("\n}")
+			buf.WriteString("\nreturn nil")
+			buf.WriteString("\n}")
 		default:
 			fmt.Fprintf(&buf, "\ns, ok := x.(%s)", bt)
 			buf.WriteString("\nif !ok {")
@@ -232,7 +249,7 @@ func writeFormatted(fn string, code []byte) {
 	fsrc, err := format.Source(code)
 	if err != nil {
 		log.Printf("Error formatting: %s", err)
-		return
+		fsrc = code
 	}
 
 	fh, err := os.OpenFile(fn, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)

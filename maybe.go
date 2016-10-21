@@ -208,12 +208,20 @@ type MaybeTime struct {
 }
 
 func (v *MaybeTime) Set(x interface{}) error {
-	s, ok := x.(time.Time)
-	if !ok {
+	switch x.(type) {
+	case string:
+		tv, err := time.Parse(time.RFC3339, x.(string))
+		if err != nil {
+			return err
+		}
+		v.ValidFlag = true
+		v.Time = tv
+	case time.Time:
+		v.ValidFlag = true
+		v.Time = x.(time.Time)
+	default:
 		return ErrInvalidMaybeValue{Value: x}
 	}
-	v.ValidFlag = true
-	v.Time = s
 	return nil
 }
 
