@@ -1,9 +1,12 @@
 package jsval_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lestrrat/go-jsval"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +14,7 @@ import (
 
 type TestMaybeStruct struct {
 	Name jsval.MaybeString `json:"name"`
-	Age int `json:"age"`
+	Age  int               `json:"age"`
 }
 
 func TestMaybeString_Empty(t *testing.T) {
@@ -80,6 +83,34 @@ func TestMaybeInt(t *testing.T) {
 	}
 
 	if !assert.NoError(t, i.Set(10.0), "const 10.0 can be set to MaybeInt (coersion takes place)") {
+		return
+	}
+}
+
+func TestMaybeTime(t *testing.T) {
+	var v jsval.MaybeTime
+
+	x := time.Now().Truncate(time.Second)
+	if !assert.NoError(t, v.Set(x), "set v to now") {
+		return
+	}
+
+	var buf bytes.Buffer
+	if !assert.NoError(t, json.NewEncoder(&buf).Encode(v), "json encoding works") {
+		return
+	}
+
+	if !assert.Equal(t, strconv.Quote(x.Format(time.RFC3339))+"\n", buf.String()) {
+		return
+	}
+
+	var d time.Time
+	if !assert.NoError(t, json.NewDecoder(&buf).Decode(&d)) {
+		return
+	}
+
+	// Use epoch time for more unambiguous comparison
+	if !assert.Equal(t, x.Unix(), d.Unix()) {
 		return
 	}
 }
