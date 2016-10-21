@@ -183,9 +183,9 @@ func genMaybe(types map[string]string, typenames []string, fn string) {
 		case "Time":
 			buf.WriteString("\nswitch x.(type) {")
 			buf.WriteString("\ncase string:")
-			buf.WriteString("\ntv, ok := time.Parse(time.RFC3339, x.(string))")
-			buf.WriteString("\nif !ok {")
-			buf.WriteString("\nreturn ErrInvalidMaybeValue{Value: x}")
+			buf.WriteString("\ntv, err := time.Parse(time.RFC3339, x.(string))")
+			buf.WriteString("\nif err != nil {")
+			buf.WriteString("\nreturn err")
 			buf.WriteString("\n}")
 			buf.WriteString("\nv.ValidFlag = true")
 			buf.WriteString("\nv.Time = tv")
@@ -195,6 +195,7 @@ func genMaybe(types map[string]string, typenames []string, fn string) {
 			buf.WriteString("\ndefault:")
 			buf.WriteString("\nreturn ErrInvalidMaybeValue{Value: x}")
 			buf.WriteString("\n}")
+			buf.WriteString("\nreturn nil")
 			buf.WriteString("\n}")
 		default:
 			fmt.Fprintf(&buf, "\ns, ok := x.(%s)", bt)
