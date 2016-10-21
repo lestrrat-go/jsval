@@ -222,15 +222,20 @@ func (v MaybeTime) Value() interface{} {
 }
 
 func (v MaybeTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.Time)
+	return json.Marshal(v.Time.Format(time.RFC3339))
 }
 
 func (v *MaybeTime) UnmarshalJSON(data []byte) error {
-	var in time.Time
-	if err := json.Unmarshal(data, &in); err != nil {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	return v.Set(in)
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return err
+	}
+	v.Time = t
+	return nil
 }
 
 type MaybeUint struct {
