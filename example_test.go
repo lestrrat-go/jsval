@@ -3,9 +3,9 @@ package jsval_test
 import (
 	"log"
 
-	"github.com/lestrrat/go-jsschema"
-	"github.com/lestrrat/go-jsval"
-	"github.com/lestrrat/go-jsval/builder"
+	"github.com/lestrrat-go/jsschema"
+	"github.com/lestrrat-go/jsval"
+	"github.com/lestrrat-go/jsval/builder"
 )
 
 func ExampleBuild() {

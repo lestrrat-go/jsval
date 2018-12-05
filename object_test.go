@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lestrrat/go-jsschema"
-	"github.com/lestrrat/go-jsval/builder"
+	"github.com/lestrrat-go/jsschema"
+	"github.com/lestrrat-go/jsval/builder"
 	"github.com/stretchr/testify/assert"
 )
 

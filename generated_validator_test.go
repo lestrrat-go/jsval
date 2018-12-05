@@ -1,6 +1,6 @@
 package jsval_test
 
-import "github.com/lestrrat/go-jsval"
+import "github.com/lestrrat-go/jsval"
 
 var V0 *jsval.JSVal
 var M *jsval.ConstraintMap

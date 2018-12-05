@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	schema "github.com/lestrrat/go-jsschema"
-	jsval "github.com/lestrrat/go-jsval"
-	"github.com/lestrrat/go-jsval/builder"
+	schema "github.com/lestrrat-go/jsschema"
+	jsval "github.com/lestrrat-go/jsval"
+	"github.com/lestrrat-go/jsval/builder"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func _main() int {
 
 	var out bytes.Buffer
 	out.WriteString("package jsval_test")
-	out.WriteString("\n\nimport \"github.com/lestrrat/go-jsval\"")
+	out.WriteString("\n\nimport \"github.com/lestrrat-go/jsval\"")
 	out.WriteString("\n")
 
 	g := jsval.NewGenerator()

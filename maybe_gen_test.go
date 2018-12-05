@@ -3,7 +3,7 @@ package jsval_test
 import (
 	"testing"
 
-	"github.com/lestrrat/go-jsval"
+	"github.com/lestrrat-go/jsval"
 )
 
 func TestSanity(t *testing.T) {

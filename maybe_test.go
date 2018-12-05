@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lestrrat/go-jsval"
+	"github.com/lestrrat-go/jsval"
 	"github.com/stretchr/testify/assert"
 )
 

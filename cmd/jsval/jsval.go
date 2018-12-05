@@ -8,11 +8,11 @@ import (
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/lestrrat/go-jspointer"
-	"github.com/lestrrat/go-jsschema"
-	"github.com/lestrrat/go-jsval"
-	"github.com/lestrrat/go-jsval/builder"
-	"github.com/lestrrat/go-jsval/server"
+	"github.com/lestrrat-go/jspointer"
+	"github.com/lestrrat-go/jsschema"
+	"github.com/lestrrat-go/jsval"
+	"github.com/lestrrat-go/jsval/builder"
+	"github.com/lestrrat-go/jsval/server"
 )
 
 func main() {

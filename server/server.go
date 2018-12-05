@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/lestrrat/go-jsschema"
-	"github.com/lestrrat/go-jsval"
-	"github.com/lestrrat/go-jsval/builder"
+	"github.com/lestrrat-go/jsschema"
+	"github.com/lestrrat-go/jsval"
+	"github.com/lestrrat-go/jsval/builder"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
