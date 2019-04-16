@@ -55,6 +55,7 @@ type defaultValue struct {
 // a boolean.
 type BooleanConstraint struct {
 	defaultValue
+	expected *bool
 }
 
 // StringConstraint implements a constraint to match against
